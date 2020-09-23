@@ -10,6 +10,7 @@ numpy = "*"
 scipy = "*"
 jupyter = "*"
 matplotlib = "*"
+cupy-cuda110 = "*"
 
 [requires]
 python_version = "3.8"
