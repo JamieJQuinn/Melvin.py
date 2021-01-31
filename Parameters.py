@@ -10,6 +10,9 @@ class Parameters:
 
         self.dt = PARAMS['dt']
 
+        self.integrator_order = PARAMS['integrator_order']
+        self.spatial_derivative_order = PARAMS['spatial_derivative_order']
+
         self.complex = np.complex128
         self.float = np.float64
 
@@ -22,3 +25,6 @@ class Parameters:
         self.km = 2*np.pi/self.lz
         self.dx = self.lx/self.nx
         self.dz = self.lz/self.nz
+
+        if self.spatial_derivative_order == 2:
+            self.ng = 1
