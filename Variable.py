@@ -26,6 +26,10 @@ class Variable:
         p = self._params
         return self._pdata[p.ng:-p.ng, p.ng:-p.ng]
 
+    def set_internal(self, value):
+        p = self._params
+        self._pdata[p.ng:-p.ng, p.ng:-p.ng] = value
+
     def apply_periodic_bcs(self):
         p = self._params
         self._pdata[:p.ng] = self._pdata[-2*p.ng:p.ng]
@@ -35,10 +39,10 @@ class Variable:
         var = self._pdata
         p = self._params
 
-        out_arr[p.ng:-p.ng] = (var[1+p.ng:-p.ng+1] - var[p.ng-1:-p.ng-1])/(2*p.dx)
+        out_arr[:] = (var[1+p.ng:] - var[:-p.ng-1])/(2*p.dx)
 
     def ddz(self, out_arr):
         var = self._pdata
         p = self._params
 
-        out_arr[:,p.ng:-p.ng] = (var[:,p.ng:-p.ng] - var[:,:p.ng:-p.ng])/(2*p.dz)
+        out_arr[:] = (var[:,1+p.ng:] - var[:,:-p.ng-1])/(2*p.dz)
