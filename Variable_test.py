@@ -1,5 +1,7 @@
 import numpy as np
 import pytest
+import time
+
 from pytest import approx
 from Parameters import Parameters
 from SpectralTransformer import SpectralTransformer
