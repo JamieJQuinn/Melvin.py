@@ -10,7 +10,7 @@ class Variable:
         xp = self._xp
         p = self._params
 
-        self._sdata = xp.zeros((p.nn, p.nm), dtype=p.complex)
+        self._sdata = xp.zeros((2*p.nn+1, p.nm), dtype=p.complex)
         self._pdata = xp.zeros((p.nx, p.nz), dtype=p.float)
 
     def set_spectral(self, data):
@@ -20,6 +20,12 @@ class Variable:
     def set_physical(self, data):
         """Setter for physical data"""
         self._pdata[:,:] = data[:,:]
+
+    def getp(self):
+        return self._pdata
+
+    def gets(self):
+        return self._sdata
 
     def to_physical(self):
         """Convert spectral data to physical"""

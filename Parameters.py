@@ -10,6 +10,9 @@ class Parameters:
 
         self.dt = PARAMS['dt']
 
+        if 'Re' in PARAMS:
+            self.Re = PARAMS['Re']
+
         if 'integrator_order' in PARAMS:
             self.integrator_order = PARAMS['integrator_order']
         else:
