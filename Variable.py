@@ -1,4 +1,7 @@
 class Variable:
+    """
+    Encapsulates the physical and spectral representations of a variable
+    """
     def __init__(self, params, xp, st):
         self._params = params
         self._xp = xp
@@ -8,41 +11,38 @@ class Variable:
         p = self._params
 
         self._sdata = xp.zeros((p.nn, p.nm), dtype=p.complex)
-        self._pdata = xp.zeros((p.nx + 2*p.ng, p.nz + 2*p.ng), dtype=p.float)
+        self._pdata = xp.zeros((p.nx, p.nz), dtype=p.float)
 
     def set_spectral(self, data):
+        """Setter for spectral data"""
         self._sdata[:,:] = data[:,:]
 
     def set_physical(self, data):
+        """Setter for physical data"""
         self._pdata[:,:] = data[:,:]
 
     def to_physical(self):
-        self._st.to_physical(self._sdata, self.get_internal())
+        """Convert spectral data to physical"""
+        self._st.to_physical(self._sdata, self._pdata)
 
     def to_spectral(self):
-        self._st.to_physical(self.get_internal(), self._sdata)
-
-    def get_internal(self):
-        p = self._params
-        return self._pdata[p.ng:-p.ng, p.ng:-p.ng]
-
-    def set_internal(self, value):
-        p = self._params
-        self._pdata[p.ng:-p.ng, p.ng:-p.ng] = value
-
-    def apply_periodic_bcs(self):
-        p = self._params
-        self._pdata[:p.ng] = self._pdata[-2*p.ng:p.ng]
-        self._pdata[-p.ng:] = self._pdata[p.ng:2*p.ng]
+        """Convert physical data to spectral"""
+        self._st.to_physical(self._pdata, self._sdata)
 
     def ddx(self, out_arr):
+        """Calculate spatial derivative of physical data"""
         var = self._pdata
         p = self._params
 
-        out_arr[:] = (var[1+p.ng:] - var[:-p.ng-1])/(2*p.dx)
+        out_arr[1:-1] = (var[2:] - var[:-2])/(2*p.dx)
+        out_arr[0, :] = (var[1, :] - var[-1, :])/(2*p.dx)
+        out_arr[-1, :] = (var[0, :] - var[-2, :])/(2*p.dx)
 
     def ddz(self, out_arr):
+        """Calculate spatial derivative of physical data"""
         var = self._pdata
         p = self._params
 
-        out_arr[:] = (var[:,1+p.ng:] - var[:,:-p.ng-1])/(2*p.dz)
+        out_arr[:,1:-1] = (var[:,2:] - var[:,:-2])/(2*p.dz)
+        out_arr[:,0] = (var[:,1] - var[:,-1])/(2*p.dz)
+        out_arr[:,-1] = (var[:,0] - var[:,-2])/(2*p.dz)
