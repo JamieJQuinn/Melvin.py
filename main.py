@@ -72,33 +72,43 @@ def main():
     ux = Variable(params, MODULE, st)
     uz = Variable(params, MODULE, st)
 
-    start = time.time()
-    for i in range(10000):
-        lap_solver.solve(w.gets(), psi.gets())
+    load_initial_conditions(params, w)
 
-        ux.set_spectral(1j*params.km*m*psi.gets())
+    T = 1.0
+    t = 0.0
+    print_time = 0.1
+    print_track = 0.0
+
+    ke = 0.0
+
+    start = time.time()
+    while t < T:
+        if print_track < t:
+            print_track += print_time
+            print(ke)
+        lap_solver.solve(w.gets(), psi.gets())
+        psi._sdata[0,0] = 0.0
+
+        ux[:] = 1j*params.km*m*psi[:]
         ux.to_physical()
-        uz.set_spectral(-1j*params.kn*n*psi.gets())
+        uz[:] = -1j*params.kn*n*psi[:]
         uz.to_physical()
+
+        ke = 0.5*MODULE.sum(ux.getp()**2 + uz.getp()**2)/(params.nx*params.nz)
 
         # Predictor
         w.to_physical()
-        dw.set(-calc_nl(w, ux.getp(), uz.getp(), st) + 1.0/params.Re*lap_solver.lap*w.gets())
-        wspec = w.gets()
-        wspec += integrator.predictor(dw)
-
-        w.to_physical()
-        dw.set(-calc_nl(w, ux.getp(), uz.getp(), st) + 1.0/params.Re*lap_solver.lap*w.gets())
-        wspec = w.gets()
-        wspec += integrator.predictor(dw)
+        dw[:] = -calc_nl(w, ux.getp(), uz.getp(), st) + 1.0/params.Re*lap_solver.lap*w[:]
+        w[:] += integrator.predictor(dw)
 
         dw.advance()
 
         ## Corrector
         w.to_physical()
-        dw.set(-calc_nl(w, ux.getp(), uz.getp(), st) + 1.0/params.Re*lap_solver.lap*w.gets())
-        wspec = w.gets()
-        wspec += integrator.corrector(dw)
+        dw[:] = -calc_nl(w, ux.getp(), uz.getp(), st) + 1.0/params.Re*lap_solver.lap*w[:]
+        w[:] += integrator.corrector(dw)
+
+        t += params.dt
 
     end = time.time() - start
     print(end)

@@ -13,6 +13,12 @@ class Variable:
         self._sdata = xp.zeros((2*p.nn+1, p.nm), dtype=p.complex)
         self._pdata = xp.zeros((p.nx, p.nz), dtype=p.float)
 
+    def __setitem__(self, index, value):
+        self._sdata[index] = value
+
+    def __getitem__(self, index):
+        return self._sdata[index]
+
     def set_spectral(self, data):
         """Setter for spectral data"""
         self._sdata[:,:] = data[:,:]
