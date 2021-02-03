@@ -10,6 +10,11 @@ class Parameters:
 
         self.dt = PARAMS['dt']
 
+        self.max_time = PARAMS['max_time']
+
+        if 'dump_cadence' in PARAMS:
+            self.dump_cadence = PARAMS['dump_cadence']
+
         if 'Re' in PARAMS:
             self.Re = PARAMS['Re']
 
