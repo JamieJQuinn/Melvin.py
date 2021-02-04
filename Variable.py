@@ -74,9 +74,13 @@ class Variable:
         if out is None:
             out = self._xp.zeros_like(self._pdata)
 
-        out[1:-1] = (var[2:] - var[:-2])/(2*p.dx)
-        out[0, :] = (var[1, :] - var[-1, :])/(2*p.dx)
-        out[-1, :] = (var[0, :] - var[-2, :])/(2*p.dx)
+        # out[1:-1] = (var[2:] - var[:-2])/(2*p.dx)
+        # out[0, :] = (var[1, :] - var[-1, :])/(2*p.dx)
+        # out[-1, :] = (var[0, :] - var[-2, :])/(2*p.dx)
+
+        out[2:-2] = (-0.25*var[4:] + 2*var[3:-1] - 2*var[1:-3] + 0.25*var[:-4])/(3*p.dz)
+        out[:2] = (-0.25*var[2:4] + 2*var[1:3] - 2*var.take((-1, 0), axis=0) + 0.25*var[-2:])/(3*p.dz)
+        out[-2:] = (-0.25*var[:2] + 2*var.take((-1, 0), axis=0) - 2*var[-3:-1] + 0.25*var[-4:-2])/(3*p.dz)
 
         return out
 
@@ -88,9 +92,13 @@ class Variable:
         if out is None:
             out = self._xp.zeros_like(self._pdata)
 
-        out[:,1:-1] = (var[:,2:] - var[:,:-2])/(2*p.dz)
-        out[:,0] = (var[:,1] - var[:,-1])/(2*p.dz)
-        out[:,-1] = (var[:,0] - var[:,-2])/(2*p.dz)
+        # out[:,1:-1] = (var[:,2:] - var[:,:-2])/(2*p.dz)
+        # out[:,0] = (var[:,1] - var[:,-1])/(2*p.dz)
+        # out[:,-1] = (var[:,0] - var[:,-2])/(2*p.dz)
+
+        out[:,2:-2] = (-0.25*var[:,4:] + 2*var[:,3:-1] - 2*var[:,1:-3] + 0.25*var[:,:-4])/(3*p.dz)
+        out[:,:2] = (-0.25*var[:,2:4] + 2*var[:,1:3] - 2*var.take((-1, 0), axis=1) + 0.25*var[:,-2:])/(3*p.dz)
+        out[:,-2:] = (-0.25*var[:,:2] + 2*var.take((-1, 0), axis=1) - 2*var[:,-3:-1] + 0.25*var[:,-4:-2])/(3*p.dz)
 
         return out
 

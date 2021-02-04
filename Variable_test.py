@@ -13,10 +13,9 @@ def parameters():
         'nx': 4**4,
         'nz': 2**8,
         'lx': 1.0,
-        'lz': 1.0,
-        'dt': 1.0
+        'lz': 1.0
     }
-    return Parameters(PARAMS)
+    return Parameters(PARAMS, validate=False)
 
 @pytest.fixture
 def st(parameters):
@@ -29,7 +28,7 @@ def test_spatial_derivatives(parameters, st):
     X, Z = np.meshgrid(x, z, indexing='ij')
 
     var = Variable(parameters, np, st)
-    var.set_physical(np.cos(2*np.pi*X)*np.cos(2*np.pi*Z))
+    var.setp(np.cos(2*np.pi*X)*np.cos(2*np.pi*Z))
 
     dvardx = np.zeros((p.nx, p.nz))
     var.ddx(dvardx)

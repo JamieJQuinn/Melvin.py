@@ -1,4 +1,8 @@
+#!/usr/bin/env python3
+
 import numpy as np
+from numpy.random import default_rng
+
 import cupy
 import time
 from utility import sech
@@ -19,15 +23,24 @@ def load_initial_conditions(params, w):
     z = np.linspace(0, params.lz, params.nz, endpoint = False)
     X, Z = np.meshgrid(x, z, indexing='ij')
 
-    epsilon = 1e-2
+    rng = default_rng(0)
+
+    epsilon = 0.01
     sigma = 0.2
-    h = 0.01
+    h = 0.05
     pert_n = 1
 
     ## Set vorticity
     w0_p = np.power(sech((Z-0.5)/h), 2)/h
     w0_pert_p = epsilon * params.kn*np.cos(pert_n*params.kn*X+np.pi)\
     *(np.exp(-((Z-0.5)/sigma)**2))
+
+    w0_p += -np.power(sech((Z-1.5)/h), 2)/h
+    w0_pert_p += epsilon * params.kn*-np.cos(pert_n*params.kn*X+np.pi)\
+    *(np.exp(-((Z-1.5)/sigma)**2))
+
+    # w0_pert_p = epsilon*(2*rng.random((params.nx, params.nz))-1.0)
+
     w0_p += w0_pert_p
 
     w.load_ics(w0_p)
@@ -40,16 +53,17 @@ def load_initial_conditions(params, w):
 
 def main():
     PARAMS = {
-        "nx": 4**6,
+        "nx": 4**5,
         "nz": 2**11,
         "lx": 1.0,
-        "lz": 1.0,
-        "dt": 1e-4,
-        "Re": 1e4,
+        "lz": 2.0,
+        "dt": 0.2/4**5,
+        "Re": 1e5,
         "integrator_order": 2,
-        "max_time": 2.0,
-        "dump_cadence": 0.01
+        "max_time": 10.0,
+        "dump_cadence": 0.1
     }
+    PARAMS['dt'] = 0.2*PARAMS['lx']/PARAMS['nx']
     dt = DataTransferer(MODULE)
     params = Parameters(PARAMS)
     st = SpectralTransformer(params, MODULE)
@@ -73,15 +87,19 @@ def main():
     t = 0.0
     print_track = 0.0
 
-    ke = 0.0
+    total_ke = 0.0
+    max_vel = 0.0
+
+    print("dt=", params.dt)
 
     start = time.time()
     while t < params.max_time:
-        if print_track < t:
+        if print_track <= t:
             print_track += params.dump_cadence
             # w.plot()
             w.save()
-            print(t, t/params.max_time *100, ke)
+            print(t, t/params.max_time *100, total_ke)
+            print(params.dz/params.dt, max_vel)
         lap_solver.solve(w.gets(), psi.gets())
         psi._sdata[0,0] = 0.0
 
@@ -90,19 +108,27 @@ def main():
         uz[:] = -1j*params.kn*n*psi[:]
         uz.to_physical()
 
-        ke = 0.5*MODULE.sum(ux.getp()**2 + uz.getp()**2)/(params.nx*params.nz)
+        ke = uz.getp()**2 + ux.getp()**2
+        max_vel = MODULE.max(MODULE.sqrt(ke))
+        total_ke = 0.5*MODULE.sum(ke)/(params.nx*params.nz)
+
+        w.to_physical()
+        dw[:] = -w.vec_dot_nabla(ux.getp(), uz.getp())
+        RHS = (1+(1-params.alpha)*params.dt/params.Re*lap_solver.lap)*w[:] + integrator.predictor(dw)
+        w[:] = RHS/(1-params.alpha*params.dt/params.Re*lap_solver.lap)
+        dw.advance()
 
         # Predictor
-        w.to_physical()
-        dw[:] = -w.vec_dot_nabla(ux.getp(), uz.getp()) + 1.0/params.Re*lap_solver.lap*w[:]
-        w[:] += integrator.predictor(dw)
-
-        dw.advance()
+        # w.to_physical()
+        # dw[:] = -w.vec_dot_nabla(ux.getp(), uz.getp()) + 1.0/params.Re*lap_solver.lap*w[:]
+        # w[:] += integrator.predictor(dw)
+        # dw.advance()
 
         ## Corrector
         # w.to_physical()
-        # dw[:] = -calc_nl(w, ux.getp(), uz.getp(), st) + 1.0/params.Re*lap_solver.lap*w[:]
+        # dw[:] = -w.vec_dot_nabla(ux.getp(), uz.getp()) + 1.0/params.Re*lap_solver.lap*w[:]
         # w[:] += integrator.corrector(dw)
+        # dw.advance()
 
         t += params.dt
 

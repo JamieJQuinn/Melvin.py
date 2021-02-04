@@ -8,12 +8,9 @@ from SpectralTransformer import SpectralTransformer
 def parameters():
     PARAMS = {
         'nx': 4**2,
-        'nz': 2**4,
-        'lx': 1.0,
-        'lz': 1.0,
-        'dt': 1.0
+        'nz': 2**4
     }
-    return Parameters(PARAMS)
+    return Parameters(PARAMS, validate=False)
 
 @pytest.fixture
 def st(parameters):
