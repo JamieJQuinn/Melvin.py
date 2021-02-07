@@ -1,13 +1,9 @@
 class LaplacianSolver:
-    def __init__(self, params, xp):
+    def __init__(self, params, xp, n, m):
         self._xp = xp
         self._params = params
 
         p = self._params
-
-        n = xp.concatenate((xp.arange(0, p.nn+1),  xp.arange(-p.nn, 0)))
-        m = xp.arange(0, p.nm)
-        n, m = xp.meshgrid(n, m, indexing='ij')
 
         # Laplacian matrix
         self.lap = -((n*p.kn)**2 + (m*p.km)**2)

@@ -18,52 +18,53 @@ from Integrator import Integrator
 
 MODULE=cupy
 
-def load_initial_conditions(params, w):
+def load_initial_conditions(params, w, ink):
     x = np.linspace(0, params.lx, params.nx, endpoint = False)
     z = np.linspace(0, params.lz, params.nz, endpoint = False)
     X, Z = np.meshgrid(x, z, indexing='ij')
 
+    R = np.sqrt((X-(params.lx/2))**2 + (Z-0.5)**2)
+
     rng = default_rng(0)
 
-    epsilon = 0.01
+    epsilon = 0.1
     sigma = 0.2
     h = 0.05
     pert_n = 1
 
     ## Set vorticity
-    w0_p = np.power(sech((Z-0.5)/h), 2)/h
-    w0_pert_p = epsilon * params.kn*np.cos(pert_n*params.kn*X+np.pi)\
-    *(np.exp(-((Z-0.5)/sigma)**2))
+    w0_p = np.power(sech((R-0.25)/h), 2)/h
+    # w0_pert_p = epsilon * params.kn*np.cos(pert_n*params.kn*X+np.pi)\
+    # *(np.exp(-((Z-0.5)/sigma)**2))
 
-    w0_p += -np.power(sech((Z-1.5)/h), 2)/h
-    w0_pert_p += epsilon * params.kn*-np.cos(pert_n*params.kn*X+np.pi)\
-    *(np.exp(-((Z-1.5)/sigma)**2))
+    # w0_p += -np.power(sech((Z-1.5)/h), 2)/h
+    # w0_pert_p += epsilon * params.kn*-np.cos(pert_n*params.kn*X+np.pi)\
+    # *(np.exp(-((Z-1.5)/sigma)**2))
 
-    # w0_pert_p = epsilon*(2*rng.random((params.nx, params.nz))-1.0)
+    w0_pert_p = epsilon*(2*rng.random((params.nx, params.nz))-1.0)
 
     w0_p += w0_pert_p
 
     w.load_ics(w0_p)
 
     ## Set ink
-    # c0_p = np.sin(1*params.km*Z)
-
-    # c.set_physical(c0_p)
-    # c.to_spectral()
+    # ink0_p = np.array(np.logical_and(Z>0.5, Z<1.5)) + 1
+    ink0_p = np.array(Z>0.5) + 1
+    ink.load_ics(ink0_p)
 
 def main():
     PARAMS = {
-        "nx": 4**5,
+        "nx": 4**6,
         "nz": 2**11,
-        "lx": 1.0,
-        "lz": 2.0,
+        "lx": 16.0/9.0,
+        "lz": 1.0,
         "dt": 0.2/4**5,
         "Re": 1e5,
         "integrator_order": 2,
-        "max_time": 10.0,
-        "dump_cadence": 0.1
+        "max_time": 3.0,
+        "dump_cadence": 0.01
     }
-    PARAMS['dt'] = 0.2*PARAMS['lx']/PARAMS['nx']
+    PARAMS['dt'] = 0.1*PARAMS['lx']/PARAMS['nx']
     dt = DataTransferer(MODULE)
     params = Parameters(PARAMS)
     st = SpectralTransformer(params, MODULE)
@@ -78,11 +79,14 @@ def main():
     w = Variable(params, MODULE, st, dt, dump_name="w")
     dw = TimeDerivative(params, MODULE)
 
+    ink = Variable(params, MODULE, st, dt, dump_name="ink")
+    dink = TimeDerivative(params, MODULE)
+
     psi = Variable(params, MODULE, st)
     ux = Variable(params, MODULE, st)
     uz = Variable(params, MODULE, st)
 
-    load_initial_conditions(params, w)
+    load_initial_conditions(params, w, ink)
 
     t = 0.0
     print_track = 0.0
@@ -117,6 +121,12 @@ def main():
         RHS = (1+(1-params.alpha)*params.dt/params.Re*lap_solver.lap)*w[:] + integrator.predictor(dw)
         w[:] = RHS/(1-params.alpha*params.dt/params.Re*lap_solver.lap)
         dw.advance()
+
+        # ink 
+        # ink.to_physical()
+        # dink[:] = -ink.vec_dot_nabla(ux.getp(), uz.getp()) + 1.0/params.Re*lap_solver.lap*ink[:]
+        # ink[:] += integrator.predictor(dink)
+        # dink.advance()
 
         # Predictor
         # w.to_physical()

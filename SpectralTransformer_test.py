@@ -8,7 +8,10 @@ from SpectralTransformer import SpectralTransformer
 def parameters():
     PARAMS = {
         'nx': 4**2,
-        'nz': 2**4
+        'nz': 2**4,
+        'lx': 1.0,
+        'lz': 1.0,
+        'final_time': 1.0,
     }
     return Parameters(PARAMS, validate=False)
 

@@ -5,10 +5,11 @@ class Variable:
     """
     Encapsulates the physical and spectral representations of a variable
     """
-    def __init__(self, params, xp, st=None, dt=None, dump_name=None):
+    def __init__(self, params, xp, sd=None, st=None, dt=None, dump_name=None):
         self._params = params
         self._xp = xp
         self._st = st
+        self._sd = sd
         self._dt = dt
         self._dump_name = dump_name
         self._dump_counter = 0
@@ -56,7 +57,7 @@ class Variable:
             self.__load_ics_from_array(data, is_physical)
 
     def __load_ics_from_file(self, data, is_physical):
-        pass
+        raise NotImplementedError
 
     def __load_ics_from_array(self, data, is_physical):
         data = self._dt.from_host(data)
@@ -66,41 +67,21 @@ class Variable:
         else:
             self.sets(data)
 
-    def ddx(self, out=None):
+    def pddx(self, out=None):
         """Calculate spatial derivative of physical data"""
-        var = self._pdata
-        p = self._params
+        return self._sd.pddx(self.getp(), out=out)
 
-        if out is None:
-            out = self._xp.zeros_like(self._pdata)
-
-        # out[1:-1] = (var[2:] - var[:-2])/(2*p.dx)
-        # out[0, :] = (var[1, :] - var[-1, :])/(2*p.dx)
-        # out[-1, :] = (var[0, :] - var[-2, :])/(2*p.dx)
-
-        out[2:-2] = (-0.25*var[4:] + 2*var[3:-1] - 2*var[1:-3] + 0.25*var[:-4])/(3*p.dz)
-        out[:2] = (-0.25*var[2:4] + 2*var[1:3] - 2*var.take((-1, 0), axis=0) + 0.25*var[-2:])/(3*p.dz)
-        out[-2:] = (-0.25*var[:2] + 2*var.take((-1, 0), axis=0) - 2*var[-3:-1] + 0.25*var[-4:-2])/(3*p.dz)
-
-        return out
-
-    def ddz(self, out=None):
+    def pddz(self, out=None):
         """Calculate spatial derivative of physical data"""
-        var = self._pdata
-        p = self._params
+        return self._sd.pddz(self.getp(), out=out)
 
-        if out is None:
-            out = self._xp.zeros_like(self._pdata)
+    def sddx(self, out=None):
+        """Calculate derivative of spectral data"""
+        return self._sd.sddx(self.gets(), out=out)
 
-        # out[:,1:-1] = (var[:,2:] - var[:,:-2])/(2*p.dz)
-        # out[:,0] = (var[:,1] - var[:,-1])/(2*p.dz)
-        # out[:,-1] = (var[:,0] - var[:,-2])/(2*p.dz)
-
-        out[:,2:-2] = (-0.25*var[:,4:] + 2*var[:,3:-1] - 2*var[:,1:-3] + 0.25*var[:,:-4])/(3*p.dz)
-        out[:,:2] = (-0.25*var[:,2:4] + 2*var[:,1:3] - 2*var.take((-1, 0), axis=1) + 0.25*var[:,-2:])/(3*p.dz)
-        out[:,-2:] = (-0.25*var[:,:2] + 2*var.take((-1, 0), axis=1) - 2*var[:,-3:-1] + 0.25*var[:,-4:-2])/(3*p.dz)
-
-        return out
+    def sddz(self, out=None):
+        """Calculate derivative of spectral data"""
+        return self._sd.sddz(self.gets(), out=out)
 
     def vec_dot_nabla(self, vx, vz, out=None):
         if out is None:
@@ -108,7 +89,7 @@ class Variable:
 
         p = self._params
 
-        out[:] = vx*self.ddx() + vz*self.ddz()
+        out[:] = vx*self.pddx() + vz*self.pddz()
         return self._st.to_spectral(out)
 
     def save(self):
