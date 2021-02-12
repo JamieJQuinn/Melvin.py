@@ -6,6 +6,7 @@ class Parameters:
 
     # Default parameters
     integrator_order = 2
+    integrator = 'explicit'
     spatial_derivative_order = 2
     alpha = 1.01
     cfl_cutoff = 0.8

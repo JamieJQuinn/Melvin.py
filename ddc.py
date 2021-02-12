@@ -16,8 +16,10 @@ from TimeDerivative import TimeDerivative
 from LaplacianSolver import LaplacianSolver
 from SpatialDifferentiator import SpatialDifferentiator
 from Integrator import Integrator
+from Timer import Timer
+from ScalarTracker import ScalarTracker
 
-MODULE=cupy
+xp=cupy
 
 def load_initial_conditions(params, w, tmp, xi):
     x = np.linspace(0, params.lx, params.nx, endpoint = False)
@@ -46,9 +48,15 @@ def load_initial_conditions(params, w, tmp, xi):
     tmp.load_ics(tmp0_p)
     xi.load_ics(xi0_p)
 
+def calc_kinetic_energy(ux, uz, xp, params):
+    nx, nz = params.nx, params.nz
+    ke = uz.getp()**2 + ux.getp()**2
+    total_ke = 0.5*xp.sum(ke)/(nx*nz)
+    return total_ke
+
 def main():
     PARAMS = {
-        "nx": 2**9,
+        "nx": 2**10,
         "nz": 2**10,
         "lx": 335.0,
         "lz": 536.0,
@@ -57,162 +65,110 @@ def main():
         "R":1.1,
         "tau":1.0/3.0,
         "final_time": 800,
-        "spatial_derivative_order": 4,
-        "integrator_order": 4,
-        "dump_cadence": 10
+        "spatial_derivative_order": 2,
+        "integrator_order": 2,
+        "integrator": "semi-implicit",
+        "dump_cadence": 0.25
     }
-    data_trans = DataTransferer(MODULE)
+    data_trans = DataTransferer(xp)
     params = Parameters(PARAMS)
-    st = SpectralTransformer(params, MODULE)
-    integrator = Integrator(params)
+    st = SpectralTransformer(params, xp)
+    integrator = Integrator(params, xp)
+    ke_tracker = ScalarTracker(params, xp)
+    timer = Timer()
 
     # Create mode number matrix
     n = np.concatenate((np.arange(0, params.nn+1),  np.arange(-params.nn, 0)))
     m = np.arange(0, params.nm)
     n, m = data_trans.from_host(np.meshgrid(n, m, indexing='ij'))
 
-    sd = SpatialDifferentiator(params, MODULE, n, m)
-    lap_solver = LaplacianSolver(params, MODULE, n, m)
+    sd = SpatialDifferentiator(params, xp, n, m)
+    lap_solver = LaplacianSolver(params, xp, n, m)
 
-    w = Variable(params, MODULE, sd=sd, st=st, dt=data_trans, dump_name="w")
-    dw = TimeDerivative(params, MODULE)
-    tmp = Variable(params, MODULE, sd=sd, st=st, dt=data_trans, dump_name="tmp")
-    dtmp = TimeDerivative(params, MODULE)
-    xi = Variable(params, MODULE, sd=sd, st=st, dt=data_trans, dump_name="xi")
-    dxi = TimeDerivative(params, MODULE)
+    w = Variable(params, xp, sd=sd, st=st, dt=data_trans, dump_name="w")
+    dw = TimeDerivative(params, xp)
+    tmp = Variable(params, xp, sd=sd, st=st, dt=data_trans, dump_name="tmp")
+    dtmp = TimeDerivative(params, xp)
+    xi = Variable(params, xp, sd=sd, st=st, dt=data_trans, dump_name="xi")
+    dxi = TimeDerivative(params, xp)
 
-    psi = Variable(params, MODULE, sd=sd, st=st)
-    ux = Variable(params, MODULE, sd=sd, st=st)
-    uz = Variable(params, MODULE, sd=sd, st=st)
+    psi = Variable(params, xp, sd=sd, st=st)
+    ux = Variable(params, xp, sd=sd, st=st)
+    uz = Variable(params, xp, sd=sd, st=st)
 
     load_initial_conditions(params, w, tmp, xi)
 
     t = 0.0
     dt = params.initial_dt
 
-    print_tracker = 0.0
+    print_counter = 0.0
 
-    ke_cadence = 10
-    ke_tracker = 0
+    ke_cadence = 100
+    ke_counter = 0
 
     loop_counter = 0
 
     total_ke = 0.0
 
-    start = time.time()
+    total_start = time.time()
+
+    wallclock_remaining = 0.0
+
     while t < params.final_time:
-        if print_tracker <= t:
-            print_tracker += params.dump_cadence
+        if print_counter <= t:
+            print_counter += params.dump_cadence
             # w.plot()
             tmp.save()
-            xi.save()
-            w.save()
-            print("{0:.2f}% complete".format(t/params.final_time *100),"t = {0:.2f}".format(t), "KE = {0:.2f}".format(data_trans.to_host(total_ke)), "dt = {0:.2e}".format(dt))
+            ke_tracker.save("kinetic_energy.npy")
+            # xi.save()
+            # w.save()
+            print("{0:.2f}% complete".format(t/params.final_time *100),"t = {0:.2f}".format(t), "KE = {0:.2f}".format(data_trans.to_host(total_ke)), "dt = {0:.2e}".format(dt), "Remaining: {0:.2f} hr".format(wallclock_remaining/3600))
         lap_solver.solve(w.gets(), psi.gets())
+
+        if ke_counter < loop_counter:
+            # Calculate kinetic energy
+            ke_counter += ke_cadence
+            ke_tracker.append(t, data_trans.to_host(calc_kinetic_energy(ux, uz, xp, params)))
+
+            # Calculate remaining time in simulation
+            timer.split()
+            wallclock_per_timestep = timer.diff/ke_cadence
+            wallclock_remaining = wallclock_per_timestep*(params.final_time - t)/dt
+
+            # Adapt timestep
+            dt = integrator.set_dt(ux, uz)
 
         # Remove mean flows
         psi._sdata[0,:] = 0.0
         w._sdata[0,:] = 0.0
         psi._sdata[:,0] = 0.0
         w._sdata[:,0] = 0.0
-        
-        # Remove averages
-        # tmp._sdata[0,:] = 0.0
-        # xi._sdata[0,:] = 0.0
-        # tmp._sdata[:,0] = 0.0
-        # xi._sdata[:,0] = 0.0
 
-        ux[:] = psi.sddz()
+        ux[:] = -psi.sddz()
         ux.to_physical()
-        uz[:] = -psi.sddx()
+        uz[:] = psi.sddx()
         uz.to_physical()
 
-        if ke_tracker < loop_counter:
-            ke_tracker += ke_cadence
-            ke = uz.getp()**2 + ux.getp()**2
-            cfl_dt = min(params.dx/MODULE.max(ux.getp()), params.dz/MODULE.max(uz.getp()))
-            if dt > cfl_dt or np.isnan(cfl_dt):
-                print("CFL condition breached")
-                return
-            while dt > 0.2*cfl_dt:
-                # new_dt = dt*0.9
-                dt = dt*0.9
-                print("new dt:", dt)
-            # if dt < 0.1*cfl_dt:
-                # # new_dt = dt*1.1
-                # dt = dt*1.1
-            integrator.set_dt(dt)
-
-            total_ke = 0.5*MODULE.sum(ke)/(params.nx*params.nz)
-
         w.to_physical()
-        lin_op = dt*params.Pr*lap_solver.lap
+        lin_op = params.Pr*lap_solver.lap
         dw[:] = -w.vec_dot_nabla(ux.getp(), uz.getp()) + params.Pr*xi.sddx() - params.Pr*tmp.sddx()
-
-        RHS = (1+(1-params.alpha)*lin_op)*w[:] + integrator.predictor(dw)
-        w[:] = RHS/(1-params.alpha*lin_op)
-        dw.advance()
+        integrator.integrate(w, dw, lin_op)
 
         tmp.to_physical()
-        lin_op = dt*lap_solver.lap
-        dtmp[:] = -tmp.vec_dot_nabla(ux.getp(), uz.getp()) + uz[:]
-
-        RHS = (1+(1-params.alpha)*lin_op)*tmp[:] + integrator.predictor(dtmp)
-        tmp[:] = RHS/(1-params.alpha*lin_op)
-        dtmp.advance()
+        lin_op = lap_solver.lap
+        dtmp[:] = -tmp.vec_dot_nabla(ux.getp(), uz.getp()) - uz[:]
+        integrator.integrate(tmp, dtmp, lin_op)
 
         xi.to_physical()
-        lin_op = dt*params.tau*lap_solver.lap
-        dxi[:] = -xi.vec_dot_nabla(ux.getp(), uz.getp()) + uz[:]/params.R
-
-        RHS = (1+(1-params.alpha)*lin_op)*xi[:] + integrator.predictor(dxi)
-        xi[:] = RHS/(1-params.alpha*lin_op)
-        dxi.advance()
-
-        # Predictor
-        # w.to_physical()
-        # dw[:] = -w.vec_dot_nabla(ux.getp(), uz.getp()) + PARAMS['Pr']*xi.sddx() - PARAMS['Pr']*tmp.sddx() + PARAMS['Pr']*lap_solver.lap*w[:]
-        # w[:] += integrator.predictor(dw)
-        # dw.advance()
-
-        # tmp.to_physical()
-        # dtmp[:] = -tmp.vec_dot_nabla(ux.getp(), uz.getp()) - uz[:] + lap_solver.lap*tmp[:]
-        # tmp[:] += integrator.predictor(dtmp)
-        # dtmp.advance()
-
-        # xi.to_physical()
-        # dxi[:] = -xi.vec_dot_nabla(ux.getp(), uz.getp()) - uz[:]/PARAMS['R'] + PARAMS['tau']*lap_solver.lap*xi[:]
-        # xi[:] += integrator.predictor(dxi)
-        # dxi.advance()
-
-        # w.to_physical()
-        # dw[:] = -w.vec_dot_nabla(ux.getp(), uz.getp()) + PARAMS['Pr']*xi.sddx() - PARAMS['Pr']*tmp.sddx() + PARAMS['Pr']*lap_solver.lap*w[:]
-        # w[:] += integrator.corrector(dw)
-
-        # tmp.to_physical()
-        # dtmp[:] = -tmp.vec_dot_nabla(ux.getp(), uz.getp()) - uz[:] + lap_solver.lap*tmp[:]
-        # tmp[:] += integrator.corrector(dtmp)
-
-        # xi.to_physical()
-        # dxi[:] = -xi.vec_dot_nabla(ux.getp(), uz.getp()) - uz[:]/PARAMS['R'] + PARAMS['tau']*lap_solver.lap*xi[:]
-        # xi[:] += integrator.corrector(dxi)
-
-        ## Corrector
-        # w.to_physical()
-        # dw[:] = -w.vec_dot_nabla(ux.getp(), uz.getp()) - PARAMS['Ra']*PARAMS['Pr']*params.kn*tmp[:] + PARAMS['Pr']*lap_solver.lap*w[:]
-        # w[:] += integrator.corrector(dw)
-        # dw.advance()
-
-        # tmp.to_physical()
-        # dtmp[:] = -tmp.vec_dot_nabla(ux.getp(), uz.getp()) + lap_solver.lap*tmp[:]
-        # tmp[:] += integrator.corrector(dtmp)
-        # dtmp.advance()
+        lin_op = params.tau*lap_solver.lap
+        dxi[:] = -xi.vec_dot_nabla(ux.getp(), uz.getp()) - uz[:]/params.R
+        integrator.integrate(xi, dxi, lin_op)
 
         t += dt
         loop_counter += 1
 
-    end = time.time() - start
-    print(end)
+    total_end = time.time() - total_start
+    print(total_end)
 
 if __name__=="__main__":
     main()
