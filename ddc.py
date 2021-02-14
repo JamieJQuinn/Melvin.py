@@ -56,7 +56,7 @@ def calc_kinetic_energy(ux, uz, xp, params):
 
 def main():
     PARAMS = {
-        "nx": 2**10,
+        "nx": 2**9,
         "nz": 2**10,
         "lx": 335.0,
         "lz": 536.0,
@@ -68,13 +68,13 @@ def main():
         "spatial_derivative_order": 2,
         "integrator_order": 2,
         "integrator": "semi-implicit",
-        "dump_cadence": 0.25
+        "dump_cadence": 1
     }
     data_trans = DataTransferer(xp)
     params = Parameters(PARAMS)
     st = SpectralTransformer(params, xp)
     integrator = Integrator(params, xp)
-    ke_tracker = ScalarTracker(params, xp)
+    ke_tracker = ScalarTracker(params, xp, "kinetic_energy.npy")
     timer = Timer()
 
     # Create mode number matrix
@@ -102,13 +102,9 @@ def main():
     dt = params.initial_dt
 
     print_counter = 0.0
-
-    ke_cadence = 100
     ke_counter = 0
-
+    cfl_counter = 0
     loop_counter = 0
-
-    total_ke = 0.0
 
     total_start = time.time()
 
@@ -119,30 +115,36 @@ def main():
             print_counter += params.dump_cadence
             # w.plot()
             tmp.save()
-            ke_tracker.save("kinetic_energy.npy")
-            # xi.save()
+            xi.save()
+            ke_tracker.save()
             # w.save()
-            print("{0:.2f}% complete".format(t/params.final_time *100),"t = {0:.2f}".format(t), "KE = {0:.2f}".format(data_trans.to_host(total_ke)), "dt = {0:.2e}".format(dt), "Remaining: {0:.2f} hr".format(wallclock_remaining/3600))
+            print("{0:.2f}% complete".format(t/params.final_time *100),"t = {0:.2f}".format(t), "dt = {0:.2e}".format(dt), "Remaining: {0:.2f} hr".format(wallclock_remaining/3600))
         lap_solver.solve(w.gets(), psi.gets())
 
         if ke_counter < loop_counter:
             # Calculate kinetic energy
-            ke_counter += ke_cadence
+            ke_counter += params.ke_cadence
             ke_tracker.append(t, data_trans.to_host(calc_kinetic_energy(ux, uz, xp, params)))
 
             # Calculate remaining time in simulation
             timer.split()
-            wallclock_per_timestep = timer.diff/ke_cadence
+            wallclock_per_timestep = timer.diff/params.ke_cadence
             wallclock_remaining = wallclock_per_timestep*(params.final_time - t)/dt
 
-            # Adapt timestep
+        if cfl_counter < loop_counter:
+            # # Adapt timestep
+            cfl_counter += params.cfl_cadence
             dt = integrator.set_dt(ux, uz)
 
         # Remove mean flows
-        psi._sdata[0,:] = 0.0
-        w._sdata[0,:] = 0.0
-        psi._sdata[:,0] = 0.0
-        w._sdata[:,0] = 0.0
+        # psi._sdata[0,:] = 0.0
+        # w._sdata[0,:] = 0.0
+        # psi._sdata[:,0] = 0.0
+        # w._sdata[:,0] = 0.0
+
+        # Remove mean x variation
+        tmp[:,0] = 0.0
+        xi[:,0] = 0.0
 
         ux[:] = -psi.sddz()
         ux.to_physical()

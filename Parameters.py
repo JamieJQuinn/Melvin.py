@@ -10,6 +10,8 @@ class Parameters:
     spatial_derivative_order = 2
     alpha = 1.01
     cfl_cutoff = 0.8
+    cfl_cadence = 10 # Number of timesteps between CFL checks
+    ke_cadence = 10 # Number of timesteps between kinetic energy save
 
     complex = np.complex128
     float = np.float64
