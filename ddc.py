@@ -65,8 +65,8 @@ def main():
         "R":1.1,
         "tau":1.0/3.0,
         "final_time": 800,
-        "spatial_derivative_order": 2,
-        "integrator_order": 2,
+        "spatial_derivative_order": 4,
+        "integrator_order": 4,
         "integrator": "semi-implicit",
         "dump_cadence": 1
     }
@@ -137,14 +137,14 @@ def main():
             dt = integrator.set_dt(ux, uz)
 
         # Remove mean flows
-        # psi._sdata[0,:] = 0.0
-        # w._sdata[0,:] = 0.0
-        # psi._sdata[:,0] = 0.0
-        # w._sdata[:,0] = 0.0
+        psi._sdata[0,:] = 0.0 # Horizontal flow
+        w._sdata[0,:] = 0.0
+        psi._sdata[:,0] = 0.0 # Vertical flows
+        w._sdata[:,0] = 0.0
 
         # Remove mean x variation
-        tmp[:,0] = 0.0
-        xi[:,0] = 0.0
+        # tmp[:,0] = 0.0
+        # xi[:,0] = 0.0
 
         ux[:] = -psi.sddz()
         ux.to_physical()
