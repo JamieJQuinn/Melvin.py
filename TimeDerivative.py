@@ -13,6 +13,12 @@ class TimeDerivative:
     def __getitem__(self, index):
         return self._data[self._curr_idx, index]
 
+    def get_curr_idx(self):
+        return self._curr_idx
+
+    def set_curr_idx(self, curr_idx):
+        self._curr_idx = curr_idx
+
     def advance(self):
         self._curr_idx = (self._curr_idx + 1)%self._params.integrator_order
 

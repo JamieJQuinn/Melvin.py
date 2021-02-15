@@ -93,10 +93,13 @@ class Variable:
         return self._st.to_spectral(out)
 
     def save(self):
-        fname = self._dump_name + '{:04d}'.format(self._dump_counter) + ".npy"
+        fname = self._dump_name + f'{self._dump_counter:04d}.npy'
         self._dump_counter += 1
 
         self._xp.save(fname, self._pdata)
+
+    def on_host(self):
+        return self._dt.to_host(self.gets())
 
     def plot(self):
         physical_host = self._dt.to_host(self._pdata)
