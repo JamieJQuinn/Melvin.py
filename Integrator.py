@@ -19,7 +19,7 @@ class Integrator:
         if self._dt > cfl_dt or np.isnan(cfl_dt):
             print("CFL condition breached")
             return
-        while self._dt > 0.8*cfl_dt:
+        while self._dt > self._cfl_cutoff*cfl_dt:
             self._dt = self._dt*0.9
         return self._dt
 
@@ -42,6 +42,7 @@ class Integrator:
         self._dt = params.initial_dt
         self._dx = params.dx
         self._dz = params.dz
+        self._cfl_cutoff = params.cfl_cutoff
         self._xp = xp
         if params.integrator_order == 2:
             self.predictor = self._adams_bashforth_2
