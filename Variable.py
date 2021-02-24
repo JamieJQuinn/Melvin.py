@@ -18,9 +18,7 @@ class Variable:
         p = self._params
 
         self._sdata = xp.zeros((2*p.nn+1, p.nm), dtype=p.complex)
-        if st is not None:
-            # This means we want to transform
-            self._pdata = xp.zeros((p.nx, p.nz), dtype=p.float)
+        self._pdata = xp.zeros((p.nx, p.nz), dtype=p.float)
 
     def __setitem__(self, index, value):
         self._sdata[index] = value
@@ -50,21 +48,24 @@ class Variable:
         """Convert physical data to spectral"""
         self._st.to_spectral(self._pdata, self._sdata)
 
-    def load_ics(self, data, is_physical=True):
+    def load(self, data, is_physical=False):
         if isinstance(data, str):
-            self.__load_ics_from_file(data, is_physical)
+            self.__load_from_file(data, is_physical)
         else:
-            self.__load_ics_from_array(data, is_physical)
+            self.__load_from_array(data, is_physical)
 
-    def __load_ics_from_file(self, data, is_physical):
+    def __load_from_file(self, data, is_physical):
         raise NotImplementedError
 
-    def __load_ics_from_array(self, data, is_physical):
+    def __load_from_array(self, data, is_physical):
         data = self._dt.from_host(data)
         if is_physical:
             self.setp(data)
             self.to_spectral()
         else:
+            nn, nm = self._params.nn, self._params.nm
+            if data.shape != (nn, nm):
+                data = scale_variable(data, (nn, nm), self._xp)
             self.sets(data)
 
     def pddx(self, out=None):
@@ -83,13 +84,12 @@ class Variable:
         """Calculate derivative of spectral data"""
         return self._sd.sddz(self.gets(), out=out)
 
-    def vec_dot_nabla(self, vx, vz, out=None):
+    def vec_dot_nabla(self, ux, uz, out=None):
         if out is None:
             out = self._xp.zeros_like(self._pdata)
 
-        p = self._params
-
-        out[:] = vx*self.pddx() + vz*self.pddz()
+        self.to_physical()
+        out[:] = self._sd.pddx(ux*self.getp()) + self._sd.pddz(uz*self.getp())
         return self._st.to_spectral(out)
 
     def save(self):
@@ -105,3 +105,14 @@ class Variable:
         physical_host = self._dt.to_host(self._pdata)
         plt.imshow(physical_host.T)
         plt.show()
+
+def scale_variable(var, outsize, xp):
+    # Scales array in spectral space from insize to outsize
+    insize = var.shape
+    outvar = xp.zeros((2*outsize[0]+1, outsize[1]))
+    nx_min = min(insize[0], outsize[0])
+    nz_min = min(insize[1], outsize[1])
+    outvar[:nx_min+1, :nz_min] = var[:nx_min+1, :nz_min]
+    outvar[-nx_min:, :nz_min] = var[-nx_min:, :nz_min]
+
+    return outvar
