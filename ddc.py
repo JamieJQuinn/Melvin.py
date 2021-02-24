@@ -35,25 +35,23 @@ def load_initial_conditions(params, w, tmp, xi):
     tmp0_p = np.zeros_like(X)
     xi0_p = np.zeros_like(X)
 
-    # tmp0_p = np.array(Z>0.5) + 0.0
-    # xi0_p = np.array(Z>0.5) + 0.0
-
-    # tmp0_p = Z
-    # xi0_p = 1.0-Z
-
-    # w0_p += epsilon*(2*rng.random((params.nx, params.nz))-1.0)
     tmp0_p += epsilon*(2*rng.random((params.nx, params.nz))-1.0)
     xi0_p += epsilon*(2*rng.random((params.nx, params.nz))-1.0)
 
-    w.load_ics(w0_p)
-    tmp.load_ics(tmp0_p)
-    xi.load_ics(xi0_p)
+    w.load(w0_p, is_physical=True)
+    tmp.load(tmp0_p, is_physical=True)
+    xi.load(xi0_p, is_physical=True)
 
 def calc_kinetic_energy(ux, uz, xp, params):
     nx, nz = params.nx, params.nz
     ke = uz.getp()**2 + ux.getp()**2
     total_ke = 0.5*xp.sum(ke)/(nx*nz)
     return total_ke
+
+def calc_nusselt_number(tmp, uz, xp, params):
+    # From Stellmach et al 2011 (DOI: 10.1017/jfm.2011.99)
+    flux = xp.mean(tmp.getp()*uz.getp())
+    return 1.0 - flux
 
 def form_dumpname(index):
     return f'dump{index:04d}.npz'
@@ -62,22 +60,22 @@ def dump(index, xp, data_trans, w, dw, tmp, dtmp, xi, dxi):
     fname = form_dumpname(index)
     np.savez(fname, 
                 w =data_trans.to_host( w[:]),
-                dw=data_trans.to_host(dw[:]),
+                dw=data_trans.to_host(dw.get_all()),
                 tmp =data_trans.to_host( tmp[:]),
-                dtmp=data_trans.to_host(dtmp[:]), 
+                dtmp=data_trans.to_host(dtmp.get_all()), 
                 xi =data_trans.to_host( xi[:]),
-                dxi=data_trans.to_host(dxi[:]),
+                dxi=data_trans.to_host(dxi.get_all()),
                 curr_idx = dw.get_curr_idx())
 
 def load(index, xp, w, dw, tmp, dtmp, xi, dxi):
     fname = form_dumpname(index)
     dump_arrays = xp.load(fname)
-    w[:] = dump_arrays['w']
-    dw[:] = dump_arrays['dw']
-    tmp[:] = dump_arrays['tmp']
-    dtmp[:] = dump_arrays['dtmp']
-    xi[:] = dump_arrays['xi']
-    dxi[:] = dump_arrays['dxi']
+    w.load(dump_arrays['w'])
+    dw.load(dump_arrays['dw'])
+    tmp.load(dump_arrays['tmp'])
+    dtmp.load(dump_arrays['dtmp'])
+    xi.load(dump_arrays['xi'])
+    dxi.load(dump_arrays['dxi'])
 
     # This assumes all variables are integrated together
     dw.set_curr_idx(dump_arrays['curr_idx'])
@@ -87,36 +85,45 @@ def load(index, xp, w, dw, tmp, dtmp, xi, dxi):
 def main():
     PARAMS = {
         "nx": 2**9,
-        "nz": 2**9,
+        "nz": 2**10,
         "lx": 335.0,
         "lz": 536.0,
+        # "lx": 134.0,
+        # "lz": 268.0,
         "initial_dt": 1e-3,
+        "cfl_cutoff": 0.5,
         "Pr":7.0,
-        "R":1.1,
+        "R0":1.1,
         "tau":1.0/3.0,
-        "final_time": 11,
-        "spatial_derivative_order": 4,
-        "integrator_order": 4,
+        "final_time": 800,
+        "spatial_derivative_order": 2,
+        "integrator_order": 2,
         "integrator": "semi-implicit",
-        "load_from": 1,
-        "save_cadence": 10,
-        "dump_cadence": 5
+        "save_cadence": 0.1,
+        # "load_from": 17,
+        "dump_cadence": 10
     }
-    data_trans = DataTransferer(xp)
     params = Parameters(PARAMS)
-    st = SpectralTransformer(params, xp)
-    integrator = Integrator(params, xp)
-    ke_tracker = ScalarTracker(params, xp, "kinetic_energy.npy")
     state = RunningState(params)
-    timer = Timer()
+
+    data_trans = DataTransferer(xp)
 
     # Create mode number matrix
     n = np.concatenate((np.arange(0, params.nn+1),  np.arange(-params.nn, 0)))
     m = np.arange(0, params.nm)
     n, m = data_trans.from_host(np.meshgrid(n, m, indexing='ij'))
 
+    # Algorithms
     sd = SpatialDifferentiator(params, xp, n, m)
     lap_solver = LaplacianSolver(params, xp, n, m)
+    st = SpectralTransformer(params, xp)
+    integrator = Integrator(params, xp)
+
+    # Trackers
+    ke_tracker = ScalarTracker(params, xp, "kinetic_energy.npz")
+    nusselt_tracker = ScalarTracker(params, xp, "nusselt.npz")
+
+    # Simulation variables
 
     w = Variable(params, xp, sd=sd, st=st, dt=data_trans, dump_name="w")
     dw = TimeDerivative(params, xp)
@@ -125,17 +132,23 @@ def main():
     xi = Variable(params, xp, sd=sd, st=st, dt=data_trans, dump_name="xi")
     dxi = TimeDerivative(params, xp)
 
-    psi = Variable(params, xp, sd=sd, st=st)
-    ux = Variable(params, xp, sd=sd, st=st)
-    uz = Variable(params, xp, sd=sd, st=st)
+    psi = Variable(params, xp, sd=sd, st=st, dump_name='psi')
+    ux = Variable(params, xp, sd=sd, st=st, dump_name='ux')
+    uz = Variable(params, xp, sd=sd, st=st, dump_name='uz')
+
+    # Load initial conditions
 
     if params.load_from is not None:
         load(params.load_from, xp, w, dw, tmp, dtmp, xi, dxi)
+        integrator.override_dt(state.dt)
     else:
         load_initial_conditions(params, w, tmp, xi)
 
     total_start = time.time()
     wallclock_remaining = 0.0
+    timer = Timer()
+
+    # Main loop
 
     while state.t < params.final_time:
         if state.save_counter <= state.t:
@@ -144,11 +157,9 @@ def main():
                   f"t = {state.t:.2f}", 
                   f"dt = {state.dt:.2e}", 
                   f"Remaining: {wallclock_remaining/3600:.2f} hr")
-            # w.plot()
             tmp.save()
-            xi.save()
             ke_tracker.save()
-            # w.save()
+            nusselt_tracker.save()
 
         if state.dump_counter <= state.t:
             state.dump_counter += params.dump_cadence
@@ -160,7 +171,8 @@ def main():
         if state.ke_counter < state.loop_counter:
             # Calculate kinetic energy
             state.ke_counter += params.ke_cadence
-            ke_tracker.append(state.t, data_trans.to_host(calc_kinetic_energy(ux, uz, xp, params)))
+            ke_tracker.append(state.t, calc_kinetic_energy(ux, uz, xp, params))
+            nusselt_tracker.append(state.t, calc_nusselt_number(tmp, uz, xp, params))
 
             # Calculate remaining time in simulation
             timer.split()
@@ -174,15 +186,9 @@ def main():
 
         # SOLVER STARTS HERE
 
-        lap_solver.solve(w.gets(), psi.gets())
+        lap_solver.solve(-w.gets(), psi.gets())
 
-        # Remove mean flows
-        psi._sdata[0,:] = 0.0 # Horizontal flow
-        w._sdata[0,:] = 0.0
-        psi._sdata[:,0] = 0.0 # Vertical flows
-        w._sdata[:,0] = 0.0
-
-        # Remove mean x variation
+        # Remove mean z variation
         tmp[:,0] = 0.0
         xi[:,0] = 0.0
 
@@ -191,19 +197,17 @@ def main():
         uz[:] = psi.sddx()
         uz.to_physical()
 
-        w.to_physical()
+        # lin_op = params.Pr*lap_solver.lap
         lin_op = params.Pr*lap_solver.lap
         dw[:] = -w.vec_dot_nabla(ux.getp(), uz.getp()) + params.Pr*xi.sddx() - params.Pr*tmp.sddx()
         integrator.integrate(w, dw, lin_op)
 
-        tmp.to_physical()
         lin_op = lap_solver.lap
         dtmp[:] = -tmp.vec_dot_nabla(ux.getp(), uz.getp()) - uz[:]
         integrator.integrate(tmp, dtmp, lin_op)
 
-        xi.to_physical()
         lin_op = params.tau*lap_solver.lap
-        dxi[:] = -xi.vec_dot_nabla(ux.getp(), uz.getp()) - uz[:]/params.R
+        dxi[:] = -xi.vec_dot_nabla(ux.getp(), uz.getp()) - uz[:]/params.R0
         integrator.integrate(xi, dxi, lin_op)
 
         state.t += state.dt
@@ -211,6 +215,7 @@ def main():
 
     total_end = time.time() - total_start
     print(f"Total time: {total_end/3600:.2f} hr")
+    print(f"Total time: {total_end:.2f} s")
 
 if __name__=="__main__":
     main()
