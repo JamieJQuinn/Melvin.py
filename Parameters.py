@@ -8,10 +8,10 @@ class Parameters:
     integrator_order = 2
     integrator = 'explicit'
     spatial_derivative_order = 2
-    alpha = 1.01
+    alpha = 0.51
     cfl_cutoff = 0.5
     cfl_cadence = 10 # Number of timesteps between CFL checks
-    ke_cadence = 10 # Number of timesteps between kinetic energy save
+    ke_cadence = 100 # Number of timesteps between kinetic energy save
     save_cadence = 100
     load_from = None
 
@@ -49,14 +49,14 @@ class Parameters:
         if 'dump_cadence' not in params:
             self.dump_cadence = 0.1*self.final_time
 
-        if 'initial_dt' not in params:
-            self.initial_dt = min(0.2*self.lx/self.nx, 0.2*self.lz/self.nz)
-
-        self.nn = int((self.nx-1)/3)
-        self.nm = int((self.nz-1)/3)
+        self.nn = (self.nx-1)//3
+        self.nm = (self.nz-1)//3
 
         self.kn = 2*np.pi/self.lx
         self.km = 2*np.pi/self.lz
 
         self.dx = self.lx/self.nx
         self.dz = self.lz/self.nz
+
+        if 'initial_dt' not in params:
+            self.initial_dt = 0.2*min(self.dx, self.dz)
