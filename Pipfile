@@ -13,6 +13,7 @@ matplotlib = "*"
 cupy-cuda111 = "*"
 imageio = "*"
 pytest = "*"
+cmocean = "*"
 
 [requires]
 python_version = "3.8"
