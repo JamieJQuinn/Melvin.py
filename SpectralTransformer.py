@@ -5,7 +5,7 @@ class SpectralTransformer:
 
         p = self._p
 
-        self._supscaled = self._xp.zeros((p.nx, int(p.nz/2)+1), dtype=p.complex)
+        self._supscaled = self._xp.zeros((p.nx, p.nz//2+1), dtype=p.complex)
 
     def _upscale(self, in_arr, out):
         p = self._p
@@ -21,9 +21,10 @@ class SpectralTransformer:
         p = self._p
         if out is None:
             out = self._xp.zeros((p.nx, p.nz), dtype=p.float)
+
         self._upscale(in_arr, self._supscaled)
-        result = self._xp.fft.irfft2(self._supscaled)*p.nx*p.nz
-        out[:] = result[:]
+        out[:] = self._xp.fft.irfft2(self._supscaled)*p.nx*p.nz
+
         return out
 
     def to_spectral(self, in_arr, out=None):
