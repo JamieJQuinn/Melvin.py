@@ -23,6 +23,10 @@ class Integrator:
             self._dt = self._dt*0.9
         return self._dt
 
+    def override_dt(self, dt):
+        """Manually set dt"""
+        self._dt = dt
+
     def get_dt(self):
         return self._dt
 
