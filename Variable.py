@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
+from BasisFunctions import BasisFunctions
 
 class Variable:
     """
@@ -13,6 +14,7 @@ class Variable:
         self._dt = dt
         self._dump_name = dump_name
         self._dump_counter = 0
+        self._basis_functions = [BasisFunctions.COMPLEX_EXP, BasisFunctions.COMPLEX_EXP]
 
         xp = self._xp
         p = self._params
@@ -42,11 +44,11 @@ class Variable:
 
     def to_physical(self):
         """Convert spectral data to physical"""
-        self._st.to_physical(self._sdata, self._pdata)
+        self._st.to_physical(self._sdata, self._pdata, self._basis_functions)
 
     def to_spectral(self):
         """Convert physical data to spectral"""
-        self._st.to_spectral(self._pdata, self._sdata)
+        self._st.to_spectral(self._pdata, self._sdata, self._basis_functions)
 
     def load(self, data, is_physical=False):
         if isinstance(data, str):

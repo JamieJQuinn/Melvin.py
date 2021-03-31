@@ -1,39 +1,7 @@
 import numpy as np
 import pytest
 from pytest import approx
-from Parameters import Parameters
-from SpectralTransformer import SpectralTransformer
 
-@pytest.fixture
-def parameters():
-    PARAMS = {
-        'nx': 4**2,
-        'nz': 2**4,
-        'lx': 1.0,
-        'lz': 1.0,
-        'final_time': 1.0,
-    }
-    return Parameters(PARAMS, validate=False)
-
-@pytest.fixture
-def st(parameters):
-    return SpectralTransformer(parameters, np)
-
-@pytest.fixture
-def spectral_array(parameters):
-    p = parameters
-    spectral = np.zeros((p.nn*2+1, p.nm), dtype=p.complex)
-    return spectral
-
-@pytest.fixture
-def physical_array(parameters):
-    p = parameters
-    physical = np.zeros((p.nx, p.nz), dtype=p.float)
-    return physical
-
-@pytest.fixture
-def arrays(spectral_array, physical_array):
-    return spectral_array, physical_array
 
 @pytest.fixture
 def coordinates(parameters):
@@ -64,6 +32,9 @@ def test_to_spectral(arrays, st, coordinates):
 
     st.to_spectral(physical, spectral)
 
+    print(spectral)
+
     # Note multiply spectral by 2 & -2. This is correct.
+    assert spectral[0, 0] == approx(0.0 + 0.0j)
     assert 2*spectral[1, 0] == approx(1.0 + 0.0j)
     assert -2*spectral[0, 2] == approx(0.0 + 2.0j)

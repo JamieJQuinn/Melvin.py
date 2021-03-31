@@ -3,29 +3,7 @@ import pytest
 import time
 
 from pytest import approx
-from Parameters import Parameters
-from SpectralTransformer import SpectralTransformer
-from SpatialDifferentiator import SpatialDifferentiator
 from Variable import Variable
-
-@pytest.fixture
-def parameters():
-    PARAMS = {
-        'nx': 4**4,
-        'nz': 2**8,
-        'lx': 1.0,
-        'lz': 1.0,
-        'final_time': 1.0
-    }
-    return Parameters(PARAMS, validate=False)
-
-@pytest.fixture
-def st(parameters):
-    return SpectralTransformer(parameters, np)
-
-@pytest.fixture
-def sd(parameters):
-    return SpatialDifferentiator(parameters, np, None, None)
 
 def test_spatial_derivatives(parameters, st, sd):
     p = parameters
