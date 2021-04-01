@@ -40,17 +40,27 @@ class SpectralTransformer:
         z_factor = p.nz
 
         if basis_functions[0] is BasisFunctions.COSINE:
-            new_arr = self._xp.concatenate((new_arr[:-1], new_arr[:0:-1]))
+            new_arr = self._xp.concatenate((new_arr[:-1], new_arr[:0:-1])) # mirror signal around end point
             x_factor = p.nx-1
+            is_x_cosine = True
+        elif basis_functions[0] is BasisFunctions.SINE:
+            new_arr = self._xp.concatenate((new_arr[:-1], -new_arr[:0:-1])) # mirror and flip
+            x_factor = -1j*(p.nx-1)
 
         if basis_functions[1] is BasisFunctions.COSINE:
             new_arr = self._xp.concatenate((new_arr[:,:-1], new_arr[:,:0:-1]), axis=1)
             z_factor = p.nz-1
+            is_z_cosine = True
+        elif basis_functions[1] is BasisFunctions.SINE:
+            new_arr = self._xp.concatenate((new_arr[:,:-1], -new_arr[:,:0:-1]), axis=1)
+            z_factor = -1j*(p.nz-1)
 
         fft_result = self._xp.fft.rfft2(new_arr)/(x_factor*z_factor)
 
-        if basis_functions[0] is BasisFunctions.COSINE and basis_functions[1] is BasisFunctions.COSINE:
-            fft_result /= 2
+        if  basis_functions[0] is BasisFunctions.COSINE:
+            fft_result[0] /= 2 # FFT double counts 0-th order term
+        if basis_functions[1] is BasisFunctions.COSINE:
+            fft_result[:,0] /= 2
 
         self._downscale(fft_result, out)
         return out
