@@ -52,9 +52,6 @@ class Parameters:
         self.nn = (self.nx-1)//3
         self.nm = (self.nz-1)//3
 
-        self.kn = 2*np.pi/self.lx
-        self.km = 2*np.pi/self.lz
-
         self.dx = self.lx/self.nx
         self.dz = self.lz/self.nz
 

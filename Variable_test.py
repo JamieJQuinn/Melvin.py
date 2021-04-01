@@ -5,13 +5,13 @@ import time
 from pytest import approx
 from Variable import Variable
 
-def test_spatial_derivatives(parameters, st, sd):
+def test_spatial_derivatives(parameters, st, sd, array_factory):
     p = parameters
     x = np.linspace(0, p.lx, p.nx, endpoint=False)
     z = np.linspace(0, p.lz, p.nz, endpoint=False)
     X, Z = np.meshgrid(x, z, indexing='ij')
 
-    var = Variable(parameters, np, st=st, sd=sd)
+    var = Variable(parameters, np, st=st, sd=sd, array_factory=array_factory)
     var.setp(np.cos(2*np.pi*X)*np.cos(2*np.pi*Z))
 
     dvardx = var.pddx()

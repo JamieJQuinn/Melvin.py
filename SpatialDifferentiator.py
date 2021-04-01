@@ -1,3 +1,5 @@
+from BasisFunctions import BasisFunctions
+
 class SpatialDifferentiator:
 
     def __init__(self, params, xp, n, m):
@@ -14,18 +16,17 @@ class SpatialDifferentiator:
             self.pddx = self.__p_ddx_central4
             self.pddz = self.__p_ddz_central4
 
-
-    def sddx(self, var, out=None):
+    def sddx(self, var, ddx_factor, out=None):
         if out is not None:
-            out = 1j*self._params.kn*self._n*var
+            out = ddx_factor*self._n*var
         else:
-            return 1j*self._params.kn*self._n*var
+            return ddx_factor*self._n*var
 
-    def sddz(self, var, out=None):
+    def sddz(self, var, ddz_factor, out=None):
         if out is not None:
-            out = 1j*self._params.km*self._m*var
+            out = ddz_factor*self._m*var
         else:
-            return 1j*self._params.km*self._m*var
+            return ddz_factor*self._m*var
 
     def __p_ddx_central2(self, var, out=None):
         if out is None:

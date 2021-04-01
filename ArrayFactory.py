@@ -4,6 +4,13 @@ class ArrayFactory:
         self._p = params
         self._xp = xp
 
+    def make_mode_number_matrices(self):
+        params = self._p
+
+        n = self._xp.concatenate((self._xp.arange(0, params.nn+1),  self._xp.arange(-params.nn, 0)))
+        m = self._xp.arange(0, params.nm)
+        return self._xp.meshgrid(n, m, indexing='ij')
+
     def make_spectral(self, nn=None, nm=None):
         """Create array representing spectral data
         :param nn: Number of spectral elements in x direction,

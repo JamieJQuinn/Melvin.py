@@ -6,21 +6,40 @@ class Variable:
     """
     Encapsulates the physical and spectral representations of a variable
     """
-    def __init__(self, params, xp, sd=None, st=None, dt=None, dump_name=None):
+    def __init__(self, params, xp, sd=None, st=None, dt=None, array_factory=None, dump_name=None,\
+                 basis_functions=[BasisFunctions.COMPLEX_EXP, BasisFunctions.COMPLEX_EXP]):
         self._params = params
         self._xp = xp
         self._st = st
         self._sd = sd
         self._dt = dt
+        self._array_factor = array_factory
         self._dump_name = dump_name
         self._dump_counter = 0
-        self._basis_functions = [BasisFunctions.COMPLEX_EXP, BasisFunctions.COMPLEX_EXP]
+
+        self._basis_functions = basis_functions
+        if self._basis_functions[0] is BasisFunctions.COMPLEX_EXP:
+            self._ddx_factor = 1j*2*np.pi/self._params.lx
+        elif self._basis_functions[0] is BasisFunctions.SINE:
+            self._ddx_factor = np.pi/self._params.lx
+        elif self._basis_functions[0] is BasisFunctions.COSINE:
+            self._ddx_factor = -np.pi/self._params.lx
+
+        if self._basis_functions[1] is BasisFunctions.COMPLEX_EXP:
+            self._ddz_factor = 1j*2*np.pi/self._params.lz
+        elif self._basis_functions[1] is BasisFunctions.SINE:
+            self._ddz_factor = np.pi/self._params.lz
+        elif self._basis_functions[1] is BasisFunctions.COSINE:
+            self._ddz_factor = -np.pi/self._params.lz
+
+        n, m = array_factory.make_mode_number_matrices()
+        self.lap = -((n*np.abs(self._ddx_factor))**2 + (m*np.abs(self._ddz_factor))**2)
 
         xp = self._xp
         p = self._params
 
-        self._sdata = xp.zeros((2*p.nn+1, p.nm), dtype=p.complex)
-        self._pdata = xp.zeros((p.nx, p.nz), dtype=p.float)
+        self._sdata = array_factory.make_spectral()
+        self._pdata = array_factory.make_physical()
 
     def __setitem__(self, index, value):
         self._sdata[index] = value
@@ -35,6 +54,12 @@ class Variable:
     def setp(self, data):
         """Setter for physical data"""
         self._pdata[:,:] = data[:,:]
+
+    def set_as_laplacian_soln(self, in_arr):
+        """Solves $\\omega = \\nabla^2 \\psi$ for $\\psi$ and sets this var to soln"""
+        self.lap[0,0] = 1
+        self.sets(in_arr/self.lap)
+        self.lap[0,0] = 0
 
     def getp(self):
         return self._pdata
@@ -80,11 +105,11 @@ class Variable:
 
     def sddx(self, out=None):
         """Calculate derivative of spectral data"""
-        return self._sd.sddx(self.gets(), out=out)
+        return self._sd.sddx(self.gets(), self._ddx_factor, out=out)
 
     def sddz(self, out=None):
         """Calculate derivative of spectral data"""
-        return self._sd.sddz(self.gets(), out=out)
+        return self._sd.sddz(self.gets(), self._ddz_factor, out=out)
 
     def vec_dot_nabla(self, ux, uz, out=None):
         if out is None:
