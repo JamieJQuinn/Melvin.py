@@ -22,26 +22,13 @@ def coordinates(parameters):
     X, Z = np.meshgrid(x, z, indexing='ij')
     return X, Z
 
-
-def test_to_physical_periodic(arrays, st, periodic_coordinates):
-    # This relies on physical -> spectral working correctly
+def test_transform_periodic(arrays, st, periodic_coordinates):
     spectral, physical = arrays
     X, Z = periodic_coordinates
 
     true_physical = np.cos(2*np.pi*X) + 2.0*np.sin(2*2*np.pi*Z)
 
-    st.to_spectral(true_physical, spectral)
-    st.to_physical(spectral, physical)
-
-    assert physical == approx(true_physical)
-
-def test_to_spectral_periodic(arrays, st, periodic_coordinates):
-    spectral, physical = arrays
-    X, Z = periodic_coordinates
-
-    physical = np.cos(2*np.pi*X) + 2.0*np.sin(2*2*np.pi*Z)
-
-    st.to_spectral(physical, spectral, basis_functions=[BasisFunctions.COMPLEX_EXP, BasisFunctions.COMPLEX_EXP])
+    st.to_spectral(true_physical, spectral, basis_functions=[BasisFunctions.COMPLEX_EXP, BasisFunctions.COMPLEX_EXP])
 
     true_spectral = np.zeros_like(spectral)
 
@@ -54,7 +41,10 @@ def test_to_spectral_periodic(arrays, st, periodic_coordinates):
 
     assert_array_almost_equal(spectral, true_spectral)
 
-def test_to_spectral_cosine_x_periodic_z(arrays, st, parameters):
+    st.to_physical(spectral, physical, basis_functions=[BasisFunctions.COMPLEX_EXP, BasisFunctions.COMPLEX_EXP])
+    assert_array_almost_equal(physical, true_physical)
+
+def test_transform_cosine_x_periodic_z(arrays, st, parameters):
     spectral, physical = arrays
 
     p = parameters
@@ -62,9 +52,9 @@ def test_to_spectral_cosine_x_periodic_z(arrays, st, parameters):
     z = np.linspace(0, 1.0, p.nz, endpoint=False)
     X, Z = np.meshgrid(x, z, indexing='ij')
 
-    physical = np.cos(np.pi*X) + 2.0*np.cos(2*np.pi*X)
+    true_physical = np.cos(np.pi*X) + 2.0*np.cos(2*np.pi*X)
 
-    st.to_spectral(physical, spectral, basis_functions=[BasisFunctions.COSINE, BasisFunctions.COMPLEX_EXP])
+    st.to_spectral(true_physical, spectral, basis_functions=[BasisFunctions.COSINE, BasisFunctions.COMPLEX_EXP])
 
     true_spectral = np.zeros_like(spectral)
     true_spectral[1,0] = 1.0
@@ -74,7 +64,10 @@ def test_to_spectral_cosine_x_periodic_z(arrays, st, parameters):
 
     assert_array_almost_equal(spectral, true_spectral)
 
-def test_to_spectral_periodic_x_cosine_z(arrays, st, parameters):
+    st.to_physical(spectral, physical, basis_functions=[BasisFunctions.COSINE, BasisFunctions.COMPLEX_EXP])
+    assert_array_almost_equal(physical, true_physical)
+
+def test_transform_periodic_x_cosine_z(arrays, st, parameters):
     spectral, physical = arrays
 
     p = parameters
@@ -82,9 +75,9 @@ def test_to_spectral_periodic_x_cosine_z(arrays, st, parameters):
     z = np.linspace(0, 1.0, p.nz)
     X, Z = np.meshgrid(x, z, indexing='ij')
 
-    physical = np.cos(np.pi*Z) + 2.0*np.cos(2*np.pi*Z)
+    true_physical = np.cos(np.pi*Z) + 2.0*np.cos(2*np.pi*Z)
 
-    st.to_spectral(physical, spectral, basis_functions=[BasisFunctions.COMPLEX_EXP, BasisFunctions.COSINE])
+    st.to_spectral(true_physical, spectral, basis_functions=[BasisFunctions.COMPLEX_EXP, BasisFunctions.COSINE])
 
     true_spectral = np.zeros_like(spectral)
     true_spectral[0,1] = 1.0
@@ -92,7 +85,10 @@ def test_to_spectral_periodic_x_cosine_z(arrays, st, parameters):
 
     assert_array_almost_equal(spectral, true_spectral)
 
-def test_to_spectral_cosine_both(arrays, st, parameters):
+    st.to_physical(spectral, physical, basis_functions=[BasisFunctions.COMPLEX_EXP, BasisFunctions.COSINE])
+    assert_array_almost_equal(physical, true_physical)
+
+def test_transform_cosine_both(arrays, st, parameters):
     spectral, physical = arrays
 
     p = parameters
@@ -100,9 +96,9 @@ def test_to_spectral_cosine_both(arrays, st, parameters):
     z = np.linspace(0, 1.0, p.nz, endpoint=True)
     X, Z = np.meshgrid(x, z, indexing='ij')
 
-    physical = np.cos(np.pi*Z) + 2.0*np.cos(2*np.pi*Z) + np.cos(np.pi*X) + 2.0*np.cos(2*np.pi*X)*np.cos(1*np.pi*Z)
+    true_physical = np.cos(np.pi*Z) + 2.0*np.cos(2*np.pi*Z) + np.cos(np.pi*X) + 2.0*np.cos(2*np.pi*X)*np.cos(1*np.pi*Z)
 
-    st.to_spectral(physical, spectral, basis_functions=[BasisFunctions.COSINE, BasisFunctions.COSINE])
+    st.to_spectral(true_physical, spectral, basis_functions=[BasisFunctions.COSINE, BasisFunctions.COSINE])
 
     true_spectral = np.zeros_like(spectral)
     true_spectral[0,1] = 1.0
@@ -119,8 +115,11 @@ def test_to_spectral_cosine_both(arrays, st, parameters):
 
     assert_array_almost_equal(spectral, true_spectral)
 
+    st.to_physical(spectral, physical, basis_functions=[BasisFunctions.COSINE, BasisFunctions.COSINE])
+    assert_array_almost_equal(physical, true_physical)
 
-def test_to_spectral_sine_both(arrays, st, parameters):
+
+def test_transform_sine_both(arrays, st, parameters):
     spectral, physical = arrays
 
     p = parameters
@@ -128,9 +127,9 @@ def test_to_spectral_sine_both(arrays, st, parameters):
     z = np.linspace(0, 1.0, p.nz, endpoint=True)
     X, Z = np.meshgrid(x, z, indexing='ij')
 
-    physical = np.sin(np.pi*Z)*np.sin(np.pi*X) + 2.0*np.sin(2*np.pi*Z)*np.sin(3*np.pi*X)
+    true_physical = np.sin(np.pi*Z)*np.sin(np.pi*X) + 2.0*np.sin(2*np.pi*Z)*np.sin(3*np.pi*X)
 
-    st.to_spectral(physical, spectral, basis_functions=[BasisFunctions.SINE, BasisFunctions.SINE])
+    st.to_spectral(true_physical, spectral, basis_functions=[BasisFunctions.SINE, BasisFunctions.SINE])
 
     true_spectral = np.zeros_like(spectral)
     true_spectral[1,1] = 1.0
@@ -141,8 +140,11 @@ def test_to_spectral_sine_both(arrays, st, parameters):
 
     assert_array_almost_equal(spectral, true_spectral)
 
+    st.to_physical(spectral, physical, basis_functions=[BasisFunctions.SINE, BasisFunctions.SINE])
+    assert_array_almost_equal(physical, true_physical)
 
-def test_to_spectral_sine_x_periodic_z(arrays, st, parameters):
+
+def test_transform_sine_x_periodic_z(arrays, st, parameters):
     spectral, physical = arrays
 
     p = parameters
@@ -150,9 +152,9 @@ def test_to_spectral_sine_x_periodic_z(arrays, st, parameters):
     z = np.linspace(0, 1.0, p.nz, endpoint=False)
     X, Z = np.meshgrid(x, z, indexing='ij')
 
-    physical = np.sin(np.pi*X) + 2.0*np.sin(2*np.pi*X)
+    true_physical = np.sin(np.pi*X) + 2.0*np.sin(2*np.pi*X)
 
-    st.to_spectral(physical, spectral, basis_functions=[BasisFunctions.SINE, BasisFunctions.COMPLEX_EXP])
+    st.to_spectral(true_physical, spectral, basis_functions=[BasisFunctions.SINE, BasisFunctions.COMPLEX_EXP])
 
     true_spectral = np.zeros_like(spectral)
     true_spectral[1,0] = 1.0
@@ -163,8 +165,11 @@ def test_to_spectral_sine_x_periodic_z(arrays, st, parameters):
 
     assert_array_almost_equal(spectral, true_spectral)
 
+    st.to_physical(spectral, physical, basis_functions=[BasisFunctions.SINE, BasisFunctions.COMPLEX_EXP])
+    assert_array_almost_equal(physical, true_physical)
 
-def test_to_spectral_sine_x_cosine_z(arrays, st, parameters):
+
+def test_transform_sine_x_cosine_z(arrays, st, parameters):
     spectral, physical = arrays
 
     p = parameters
@@ -172,9 +177,9 @@ def test_to_spectral_sine_x_cosine_z(arrays, st, parameters):
     z = np.linspace(0, 1.0, p.nz, endpoint=False)
     X, Z = np.meshgrid(x, z, indexing='ij')
 
-    physical = np.sin(np.pi*X) + 2.0*np.sin(2*np.pi*X)
+    true_physical = np.sin(np.pi*X) + 2.0*np.sin(2*np.pi*X)
 
-    st.to_spectral(physical, spectral, basis_functions=[BasisFunctions.SINE, BasisFunctions.COSINE])
+    st.to_spectral(true_physical, spectral, basis_functions=[BasisFunctions.SINE, BasisFunctions.COSINE])
 
     true_spectral = np.zeros_like(spectral)
     true_spectral[1,0] = 1.0
@@ -185,8 +190,12 @@ def test_to_spectral_sine_x_cosine_z(arrays, st, parameters):
 
     assert_array_almost_equal(spectral, true_spectral)
 
+    st.to_physical(spectral, physical, basis_functions=[BasisFunctions.SINE, BasisFunctions.COSINE])
 
-def test_to_spectral_cosine_x_sine_z(arrays, st, parameters):
+    assert_array_almost_equal(physical, true_physical)
+
+
+def test_transform_cosine_x_sine_z(arrays, st, parameters):
     spectral, physical = arrays
 
     p = parameters
@@ -194,9 +203,9 @@ def test_to_spectral_cosine_x_sine_z(arrays, st, parameters):
     z = np.linspace(0, 1.0, p.nz, endpoint=True)
     X, Z = np.meshgrid(x, z, indexing='ij')
 
-    physical = np.cos(np.pi*X)*np.sin(np.pi*Z) + 2.0*np.cos(3*np.pi*X)*np.sin(2*np.pi*Z) + 3.0*np.sin(2*np.pi*Z)
+    true_physical = np.cos(np.pi*X)*np.sin(np.pi*Z) + 2.0*np.cos(3*np.pi*X)*np.sin(2*np.pi*Z) + 3.0*np.sin(2*np.pi*Z)
 
-    st.to_spectral(physical, spectral, basis_functions=[BasisFunctions.COSINE, BasisFunctions.SINE])
+    st.to_spectral(true_physical, spectral, basis_functions=[BasisFunctions.COSINE, BasisFunctions.SINE])
 
     true_spectral = np.zeros_like(spectral)
     true_spectral[1,1] = 1.0
@@ -208,3 +217,7 @@ def test_to_spectral_cosine_x_sine_z(arrays, st, parameters):
     true_spectral[-3,2] = 2.0
 
     assert_array_almost_equal(spectral, true_spectral)
+
+    st.to_physical(spectral, physical, basis_functions=[BasisFunctions.COSINE, BasisFunctions.SINE])
+
+    assert_array_almost_equal(physical, true_physical)
