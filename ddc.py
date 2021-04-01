@@ -13,12 +13,12 @@ from SpectralTransformer import SpectralTransformer
 from DataTransferer import DataTransferer
 from Variable import Variable
 from TimeDerivative import TimeDerivative
-from LaplacianSolver import LaplacianSolver
 from SpatialDifferentiator import SpatialDifferentiator
 from Integrator import Integrator
 from Timer import Timer
 from ScalarTracker import ScalarTracker
 from RunningState import RunningState
+from ArrayFactory import ArrayFactory
 
 xp=cupy
 
@@ -84,23 +84,21 @@ def load(index, xp, w, dw, tmp, dtmp, xi, dxi):
 
 def main():
     PARAMS = {
-        "nx": 2**9,
-        "nz": 2**10,
+        "nx": 2**11,
+        "nz": 2**11,
         "lx": 335.0,
         "lz": 536.0,
-        # "lx": 134.0,
-        # "lz": 268.0,
         "initial_dt": 1e-3,
         "cfl_cutoff": 0.5,
         "Pr":7.0,
         "R0":1.1,
         "tau":1.0/3.0,
-        "final_time": 800,
+        "final_time": 1,
         "spatial_derivative_order": 2,
         "integrator_order": 2,
         "integrator": "semi-implicit",
-        "save_cadence": 0.1,
-        # "load_from": 17,
+        "save_cadence": 10,
+        # "load_from": 49,
         "dump_cadence": 10
     }
     params = Parameters(PARAMS)
@@ -108,15 +106,13 @@ def main():
 
     data_trans = DataTransferer(xp)
 
+    array_factory = ArrayFactory(params, xp)
     # Create mode number matrix
-    n = np.concatenate((np.arange(0, params.nn+1),  np.arange(-params.nn, 0)))
-    m = np.arange(0, params.nm)
-    n, m = data_trans.from_host(np.meshgrid(n, m, indexing='ij'))
+    n, m = array_factory.make_mode_number_matrices()
 
     # Algorithms
     sd = SpatialDifferentiator(params, xp, n, m)
-    lap_solver = LaplacianSolver(params, xp, n, m)
-    st = SpectralTransformer(params, xp)
+    st = SpectralTransformer(params, xp, array_factory)
     integrator = Integrator(params, xp)
 
     # Trackers
@@ -125,16 +121,16 @@ def main():
 
     # Simulation variables
 
-    w = Variable(params, xp, sd=sd, st=st, dt=data_trans, dump_name="w")
+    w = Variable(params, xp, sd=sd, st=st, dt=data_trans, array_factory=array_factory, dump_name="w")
     dw = TimeDerivative(params, xp)
-    tmp = Variable(params, xp, sd=sd, st=st, dt=data_trans, dump_name="tmp")
+    tmp = Variable(params, xp, sd=sd, st=st, dt=data_trans, array_factory=array_factory, dump_name="tmp")
     dtmp = TimeDerivative(params, xp)
-    xi = Variable(params, xp, sd=sd, st=st, dt=data_trans, dump_name="xi")
+    xi = Variable(params, xp, sd=sd, st=st, dt=data_trans, array_factory=array_factory, dump_name="xi")
     dxi = TimeDerivative(params, xp)
 
-    psi = Variable(params, xp, sd=sd, st=st, dump_name='psi')
-    ux = Variable(params, xp, sd=sd, st=st, dump_name='ux')
-    uz = Variable(params, xp, sd=sd, st=st, dump_name='uz')
+    psi = Variable(params, xp, sd=sd, st=st, array_factory=array_factory, dump_name='psi')
+    ux = Variable(params, xp, sd=sd, st=st, array_factory=array_factory, dump_name='ux')
+    uz = Variable(params, xp, sd=sd, st=st, array_factory=array_factory, dump_name='uz')
 
     # Load initial conditions
 
@@ -157,16 +153,16 @@ def main():
                   f"t = {state.t:.2f}", 
                   f"dt = {state.dt:.2e}", 
                   f"Remaining: {wallclock_remaining/3600:.2f} hr")
-            tmp.save()
-            ke_tracker.save()
-            nusselt_tracker.save()
+            # tmp.save()
+            # ke_tracker.save()
+            # nusselt_tracker.save()
 
-        if state.dump_counter <= state.t:
-            state.dump_counter += params.dump_cadence
-            dump(state.dump_index, xp, data_trans,
-                 w, dw, tmp, dtmp, xi, dxi)
-            state.save(state.dump_index)
-            state.dump_index += 1
+        # if state.dump_counter <= state.t:
+            # state.dump_counter += params.dump_cadence
+            # dump(state.dump_index, xp, data_trans,
+                 # w, dw, tmp, dtmp, xi, dxi)
+            # state.save(state.dump_index)
+            # state.dump_index += 1
 
         if state.ke_counter < state.loop_counter:
             # Calculate kinetic energy
@@ -185,8 +181,7 @@ def main():
             state.dt = integrator.set_dt(ux, uz)
 
         # SOLVER STARTS HERE
-
-        lap_solver.solve(-w.gets(), psi.gets())
+        psi.set_as_laplacian_soln(-w.gets())
 
         # Remove mean z variation
         tmp[:,0] = 0.0
@@ -198,15 +193,15 @@ def main():
         uz.to_physical()
 
         # lin_op = params.Pr*lap_solver.lap
-        lin_op = params.Pr*lap_solver.lap
+        lin_op = params.Pr*w.lap
         dw[:] = -w.vec_dot_nabla(ux.getp(), uz.getp()) + params.Pr*xi.sddx() - params.Pr*tmp.sddx()
         integrator.integrate(w, dw, lin_op)
 
-        lin_op = lap_solver.lap
+        lin_op = tmp.lap
         dtmp[:] = -tmp.vec_dot_nabla(ux.getp(), uz.getp()) - uz[:]
         integrator.integrate(tmp, dtmp, lin_op)
 
-        lin_op = params.tau*lap_solver.lap
+        lin_op = params.tau*xi.lap
         dxi[:] = -xi.vec_dot_nabla(ux.getp(), uz.getp()) - uz[:]/params.R0
         integrator.integrate(xi, dxi, lin_op)
 
