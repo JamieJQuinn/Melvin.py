@@ -40,13 +40,17 @@ class SpectralTransformer:
         z_factor = p.nz
 
         if basis_functions[0] is BasisFunctions.COSINE:
-            new_arr = self._xp.concatenate((in_arr[:-1], in_arr[:0:-1]))
+            new_arr = self._xp.concatenate((new_arr[:-1], new_arr[:0:-1]))
             x_factor = p.nx-1
 
         if basis_functions[1] is BasisFunctions.COSINE:
-            new_arr = self._xp.concatenate((in_arr[:,:-1], in_arr[:,:0:-1]))
+            new_arr = self._xp.concatenate((new_arr[:,:-1], new_arr[:,:0:-1]), axis=1)
             z_factor = p.nz-1
 
         fft_result = self._xp.fft.rfft2(new_arr)/(x_factor*z_factor)
+
+        if basis_functions[0] is BasisFunctions.COSINE and basis_functions[1] is BasisFunctions.COSINE:
+            fft_result /= 2
+
         self._downscale(fft_result, out)
         return out
