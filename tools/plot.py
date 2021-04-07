@@ -108,4 +108,4 @@ if __name__ == '__main__':
         vmaxes = calc_vmaxes(args.filenames)
         ma_vec = calc_moving_average(vmaxes)
     with Pool(args.ncores) as p:
-        print(p.map(plot, enumerate(args.filenames)))
+        p.map(plot, enumerate(args.filenames))
