@@ -125,3 +125,7 @@ Then render to video with
 ```
 ffmpeg -r 30 -i tmp%04d.npy.png -c:v libx264 -vf "format=yuv420p,scale=1024:-2" out.mp4
 ```
+
+## 2021-04-01
+
+Finally managed to implement cosine and sine transforms manually using pre and post processing of the standard FFT.
