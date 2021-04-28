@@ -19,6 +19,7 @@ from Timer import Timer
 from ScalarTracker import ScalarTracker
 from RunningState import RunningState
 from ArrayFactory import ArrayFactory
+from Operators import double_fourier_viscous_op
 
 xp=cupy
 
@@ -181,17 +182,13 @@ def main():
         uz[:] = psi.sddx()
         uz.to_physical()
 
-        lin_op = params.Pr*w.lap
-        dw[:] = -w.vec_dot_nabla(ux.getp(), uz.getp()) + params.Pr*xi.sddx() - params.Pr*tmp.sddx()
+        lin_op = lambda var: return double_fourier_viscous_op(params.Pr, w)
+        dw[:] = -w.vec_dot_nabla(ux.getp(), uz.getp()) - params.Pr*tmp.sddx()
         integrator.integrate(w, dw, lin_op)
 
-        lin_op = tmp.lap
-        dtmp[:] = -tmp.vec_dot_nabla(ux.getp(), uz.getp()) - uz[:]
+        lin_op = lambda var: return double_fourier_viscous_op(1.0, tmp)
+        dtmp[:] = -tmp.vec_dot_nabla(ux.getp(), uz.getp())
         integrator.integrate(tmp, dtmp, lin_op)
-
-        lin_op = params.tau*xi.lap
-        dxi[:] = -xi.vec_dot_nabla(ux.getp(), uz.getp()) - uz[:]/params.R0
-        integrator.integrate(xi, dxi, lin_op)
 
         state.t += state.dt
         state.loop_counter += 1
