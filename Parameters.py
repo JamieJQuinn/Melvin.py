@@ -33,11 +33,11 @@ class Parameters:
                 sys.exit(-1)
 
         self.load_from_dict(params)
-        self.set_derived_params(params)
 
     def load_from_dict(self, params):
         for key in params:
             setattr(self, key, params[key])
+        self.set_derived_params(params)
 
     def is_valid(self, params):
         valid = True

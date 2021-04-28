@@ -103,11 +103,12 @@ class Variable:
         """Returns linear operator representing laplacian"""
         return self._sd.calc_lap(self._basis_functions)
 
-    def vec_dot_nabla(self, ux, uz, out=None):
+    def vec_dot_nabla(self, ux, uz, out=None, convert_to_physical=True):
         if out is None:
             out = self._xp.zeros_like(self._pdata)
 
-        self.to_physical()
+        if convert_to_physical:
+            self.to_physical()
         out[:] = self._sd.pddx(ux*self.getp()) + self._sd.pddz(uz*self.getp())
         return self._st.to_spectral(out, basis_functions=self._basis_functions)
 
