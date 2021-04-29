@@ -15,6 +15,8 @@ class Parameters:
     save_cadence = 100
     load_from = None
 
+    discretisation = ['spectral', 'spectral']
+
     complex = np.complex128
     float = np.float64
 
@@ -43,7 +45,13 @@ class Parameters:
             if key not in params:
                 print(key, "missing from input parameters.")
                 valid = False
+        if 'fdm' in self.discretisation and self.integrator == 'explicit':
+            print("FDM and implicit method currently not supported.")
+            valid = False
         return int(valid)
+
+    def is_fully_spectral(self):
+        return self.discretisation[0] == 'spectral' and self.discretisation[1] == 'spectral'
 
     def set_derived_params(self, params):
         if 'dump_cadence' not in params:
