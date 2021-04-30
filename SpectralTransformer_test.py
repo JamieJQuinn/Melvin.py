@@ -4,7 +4,8 @@ from pytest import approx
 from numpy.testing import assert_array_almost_equal
 
 from BasisFunctions import BasisFunctions
-
+from ArrayFactory import ArrayFactory
+from SpectralTransformer import SpectralTransformer
 
 @pytest.fixture
 def periodic_coordinates(parameters):
@@ -174,7 +175,7 @@ def test_transform_sine_x_cosine_z(arrays, st, parameters):
 
     p = parameters
     x = np.linspace(0, 1.0, p.nx, endpoint=True)
-    z = np.linspace(0, 1.0, p.nz, endpoint=False)
+    z = np.linspace(0, 1.0, p.nz, endpoint=True)
     X, Z = np.meshgrid(x, z, indexing='ij')
 
     true_physical = np.sin(np.pi*X) + 2.0*np.sin(2*np.pi*X)
@@ -199,6 +200,7 @@ def test_transform_cosine_x_sine_z(arrays, st, parameters):
     spectral, physical = arrays
 
     p = parameters
+
     x = np.linspace(0, 1.0, p.nx, endpoint=True)
     z = np.linspace(0, 1.0, p.nz, endpoint=True)
     X, Z = np.meshgrid(x, z, indexing='ij')
