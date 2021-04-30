@@ -34,11 +34,11 @@ class SpectralTransformer:
         if out is None:
             out = self._array_factory.make_physical()
 
-        if basis_functions[0] == BasisFunctions.FDM:
+        if basis_functions[0] is BasisFunctions.FDM:
             axis=1
             factor = p.nz
             upscaled = self._array_factory.make_spectral(p.nx, p.nz//2+1)
-        elif basis_functions[1] == BasisFunctions.FDM:
+        elif basis_functions[1] is BasisFunctions.FDM:
             axis=0
             factor = p.nx
             upscaled = self._array_factory.make_spectral(p.nx//2+1, p.nz)
@@ -54,12 +54,12 @@ class SpectralTransformer:
     def __to_spectral_1d(self, in_arr, out=None, basis_functions=[BasisFunctions.COMPLEX_EXP, BasisFunctions.COMPLEX_EXP]):
         p = self._p
         if out is None:
-            out = self._array_factory.make_physical()
+            out = self._array_factory.make_spectral()
 
-        if basis_functions[0] == BasisFunctions.FDM:
+        if basis_functions[0] is BasisFunctions.FDM:
             axis=1
             factor = p.nz
-        elif basis_functions[1] == BasisFunctions.FDM:
+        elif basis_functions[1] is BasisFunctions.FDM:
             axis=0
             factor = p.nx
         else:
