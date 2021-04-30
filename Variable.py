@@ -37,6 +37,15 @@ class Variable:
             n, m = array_factory.make_mode_number_matrices()
             self.lap = -((n*np.abs(self._ddx_factor))**2 + (m*np.abs(self._ddz_factor))**2)
 
+        if self._params.discretisation[0] == 'spectral':
+            self.sd2dx2 = self.__sd2dx2_spectral
+        else:
+            self.sd2dx2 = self.__sd2dx2_fdm
+        if self._params.discretisation[1] == 'spectral':
+            self.sd2dz2 = self.__sd2dz2_spectral
+        else:
+            self.sd2dz2 = self.__sd2dz2_fdm
+
         xp = self._xp
         p = self._params
 
@@ -107,20 +116,21 @@ class Variable:
         """Calculate derivative of spectral data"""
         return self._sd.sddz(self.gets(), self._ddz_factor, out=out)
 
-    def nabla2(self, out=None):
-        if out is None:
-            out = self._array_factory.make_spectral()
+    def snabla2(self, out=None):
+        """Calculate $\nabla^2$ in spectral form"""
+        return self.sd2dx2() + self.sd2dz2()
 
-        if self._params.discretisation[0] == 'fdm':
-            out += self._sd.pd2dx2(self.gets())
-        else:
-            out += self._sd.sd2dx2(self.gets(), self._ddx_factor)
-        if self._params.discretisation[1] == 'fdm':
-            out += self._sd.pd2dz2(self.gets())
-        else:
-            out += self._sd.sd2dz2(self.gets(), self._ddz_factor)
+    def __sd2dx2_spectral(self, out=None):
+        return self._sd.sd2dx2(self.gets(), self._ddx_factor, out=out)
 
-        return out
+    def __sd2dz2_spectral(self, out=None):
+        return self._sd.sd2dz2(self.gets(), self._ddz_factor, out=out)
+
+    def __sd2dx2_fdm(self, out=None):
+        return self._sd.pd2dx2(self.gets(), out=out)
+
+    def __sd2dz2_fdm(self, out=None):
+        return self._sd.pd2dz2(self.gets(), out=out)
 
     def vec_dot_nabla(self, ux, uz, out=None):
         if out is None:
@@ -128,7 +138,7 @@ class Variable:
 
         self.to_physical()
         out[:] = self._sd.pddx(ux*self.getp()) + self._sd.pddz(uz*self.getp())
-        return self._st.to_spectral(out)
+        return self._st.to_spectral(out, basis_functions=self._basis_functions)
 
     def save(self):
         fname = self._dump_name + f'{self._dump_counter:04d}.npy'

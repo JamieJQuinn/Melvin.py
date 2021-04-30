@@ -1,9 +1,13 @@
 import numpy as np
 import pytest
 import time
+from numpy.testing import assert_array_almost_equal
 
 from pytest import approx
 from Variable import Variable
+from SpatialDifferentiator import SpatialDifferentiator
+from ArrayFactory import ArrayFactory
+from SpectralTransformer import SpectralTransformer
 
 def test_spatial_derivatives(parameters, st, sd, array_factory):
     p = parameters
@@ -27,3 +31,22 @@ def test_spatial_derivatives(parameters, st, sd, array_factory):
     dvardz_test = dvardz[0,:]
 
     assert dvardz_test == approx(dvardz_true, rel=1e-3)
+
+def test_fdm_nabla2(fdm_parameters):
+    p = fdm_parameters
+    x = np.linspace(0, p.lx, p.nx, endpoint=False)
+    z = np.linspace(0, p.lz, p.nz, endpoint=False)
+    X, Z = np.meshgrid(x, z, indexing='ij')
+
+    array_factory = ArrayFactory(p, np)
+    spatial_diff = SpatialDifferentiator(p, np, array_factory=array_factory)
+
+    var = Variable(p, np, sd=spatial_diff, array_factory=array_factory)
+    var[1] = 0.5*z**2
+
+    nabla2 = var.snabla2()
+
+    true_nabla2 = np.zeros_like(nabla2)
+    true_nabla2[1] = -(2*np.pi)**2*var[1] + 1
+
+    assert_array_almost_equal(nabla2[1, 1:-1], true_nabla2[1, 1:-1])
