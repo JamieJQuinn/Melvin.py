@@ -30,15 +30,15 @@ class Integrator:
     def get_dt(self):
         return self._dt
 
-    def _explicit(self, var, dvar, lin_op):
-        dvar[:] += lin_op*var[:]
+    def _explicit(self, var, dvar, diffusion_term):
+        dvar[:] += diffusion_term
         var[:] += self.predictor(dvar)
         dvar.advance()
 
-    def _semi_implicit(self, var, dvar, lin_op):
+    def _semi_implicit(self, var, dvar, diffusion_term):
         alpha = self._alpha
         dt = self._dt
-        RHS = (1+(1-alpha)*dt*lin_op)*var[:] + self.predictor(dvar)
+        RHS = var[:]+(1-alpha)*dt*diffusion_term + self.predictor(dvar)
         var[:] = RHS/(1-alpha*dt*lin_op)
         dvar.advance()
 
