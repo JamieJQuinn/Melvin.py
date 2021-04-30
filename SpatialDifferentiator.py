@@ -2,12 +2,14 @@ from BasisFunctions import BasisFunctions
 
 class SpatialDifferentiator:
 
-    def __init__(self, params, xp, n, m):
+    def __init__(self, params, xp, array_factory=None):
         self._xp = xp
         self._params = params
 
-        self._n = n
-        self._m = m
+        self._x_periodic = (params.discretisation[0] == 'spectral')
+        self._z_periodic = (params.discretisation[1] == 'spectral')
+
+        self._n, self._m = array_factory.make_mode_number_matrices()
 
         if params.spatial_derivative_order == 2:
             self.pddx = self.__p_ddx_central2

@@ -12,8 +12,16 @@ class ArrayFactory:
     def make_mode_number_matrices(self):
         params = self._p
 
-        n = self._xp.concatenate((self._xp.arange(0, params.nn+1),  self._xp.arange(-params.nn, 0)))
-        m = self._xp.arange(0, params.nm)
+        if params.is_fully_spectral():
+            n = self._xp.concatenate((self._xp.arange(0, params.nn+1),  self._xp.arange(-params.nn, 0)))
+            m = self._xp.arange(0, params.nm)
+        elif params.discretisation[0] == 'fdm':
+            n = self._xp.arange(0, params.nx)
+            m = self._xp.arange(0, params.nm)
+        elif params.discretisation[1] == 'fdm':
+            n = self._xp.arange(0, params.nn)
+            m = self._xp.arange(0, params.nz)
+
         return self._xp.meshgrid(n, m, indexing='ij')
 
     def make_spectral(self, nn=None, nm=None):
