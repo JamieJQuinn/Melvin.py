@@ -5,9 +5,13 @@ class ArrayFactory:
         self._xp = xp
 
         if params.is_fully_spectral():
-            self.make_spectral = self._make_all_spectral
+            self.spectral_shape = (2*params.nn+1, params.nm)
         else:
-            self.make_spectral = self._make_semi_spectral
+            if params.discretisation[0] == 'fdm':
+                self.spectral_shape = (params.nx, params.nm)
+            elif params.discretisation[1] == 'fdm':
+                self.spectral_shape = (params.nn, params.nz)
+        self.physical_shape = (params.nx, params.nz)
 
     def make_mode_number_matrices(self):
         params = self._p
@@ -24,24 +28,7 @@ class ArrayFactory:
 
         return self._xp.meshgrid(n, m, indexing='ij')
 
-    def make_spectral(self, nn=None, nm=None):
-        """Create array representing spectral data
-        :param nn: Number of spectral elements in x direction,
-        defaults to value specified in parameters
-        :type nn: int, optional
-        :param nm: Number of spectral elements in z direction,
-        defaults to value specified in parameters
-        :type nm: int, optional
-        """
-        if nn is None:
-            nn = 2*self._p.nn+1
-        if nm is None:
-            nm = self._p.nm
-        dtype = self._p.complex
-
-        return self._xp.zeros((nn, nm), dtype=dtype)
-
-    def _make_semi_spectral(self, ni=None, nj=None):
+    def make_spectral(self, ni=None, nj=None):
         """Create array representing spectral data
         :param ni: Number of elements in x direction,
         defaults to value specified in parameters
@@ -50,17 +37,13 @@ class ArrayFactory:
         defaults to value specified in parameters
         :type nj: int, optional
         """
-
-        # TODO refactor this and _make_all_spectral
-
         if ni is None:
-            ni = self._p.nn
+            ni = self.spectral_shape[0]
         if nj is None:
-            nj = self._p.nz
-        dtype = self._p.complex
+            nj = self.spectral_shape[1]
+        dtype = self._p.complex # TODO change this when dealing with e.g. sine basis functions. Complex isn't needed in that case
 
         return self._xp.zeros((ni, nj), dtype=dtype)
-
 
     def make_physical(self, nx=None, nz=None):
         """Create array representing physical data

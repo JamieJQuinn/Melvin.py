@@ -38,8 +38,8 @@ def st(parameters, array_factory):
     return SpectralTransformer(parameters, np, array_factory)
 
 @pytest.fixture
-def sd(parameters):
-    return SpatialDifferentiator(parameters, np, None, None)
+def sd(parameters, array_factory):
+    return SpatialDifferentiator(parameters, np, array_factory)
 
 @pytest.fixture
 def arrays(array_factory):

@@ -4,11 +4,11 @@ class TimeDerivative:
     """
     Represents a sequence of derivatives in time
     """
-    def __init__(self, params, xp):
+    def __init__(self, params, xp, array_factory=None):
         self._params = params
         self._xp = xp
         self._curr_idx = 0
-        self._data = xp.zeros((params.integrator_order, 2*params.nn+1, params.nm), dtype=params.complex)
+        self._data = xp.zeros((params.integrator_order, array_factory.spectral_shape[0], array_factory.spectral_shape[1]), dtype=params.complex)
 
     def __setitem__(self, index, value):
         self._data[self._curr_idx, index] = value
