@@ -4,15 +4,6 @@ class ArrayFactory:
         self._p = params
         self._xp = xp
 
-        if params.is_fully_spectral():
-            self.spectral_shape = (2*params.nn+1, params.nm)
-        else:
-            if params.discretisation[0] == 'fdm':
-                self.spectral_shape = (params.nx, params.nm)
-            elif params.discretisation[1] == 'fdm':
-                self.spectral_shape = (params.nn, params.nz)
-        self.physical_shape = (params.nx, params.nz)
-
     def make_mode_number_matrices(self):
         params = self._p
 
@@ -38,9 +29,9 @@ class ArrayFactory:
         :type nj: int, optional
         """
         if ni is None:
-            ni = self.spectral_shape[0]
+            ni = self._p.spectral_shape[0]
         if nj is None:
-            nj = self.spectral_shape[1]
+            nj = self._p.spectral_shape[1]
         dtype = self._p.complex # TODO change this when dealing with e.g. sine basis functions. Complex isn't needed in that case
 
         return self._xp.zeros((ni, nj), dtype=dtype)

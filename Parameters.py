@@ -62,6 +62,15 @@ class Parameters:
         if self.discretisation[1] == 'spectral':
             self.nm = (self.nz-1)//3
 
+        if self.is_fully_spectral():
+            self.spectral_shape = (2*self.nn+1, self.nm)
+        else:
+            if self.discretisation[0] == 'fdm':
+                self.spectral_shape = (self.nx, self.nm)
+            elif self.discretisation[1] == 'fdm':
+                self.spectral_shape = (self.nn, self.nz)
+        self.physical_shape = (self.nx, self.nz)
+
         self.dx = self.lx/self.nx
         self.dz = self.lz/self.nz
 

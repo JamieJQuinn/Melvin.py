@@ -8,7 +8,9 @@ class TimeDerivative:
         self._params = params
         self._xp = xp
         self._curr_idx = 0
-        self._data = xp.zeros((params.integrator_order, array_factory.spectral_shape[0], array_factory.spectral_shape[1]), dtype=params.complex)
+        self._data = xp.zeros(
+            (params.integrator_order, params.spectral_shape[0], params.spectral_shape[1]),
+            dtype=params.complex)
 
     def __setitem__(self, index, value):
         self._data[self._curr_idx, index] = value

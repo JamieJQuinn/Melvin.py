@@ -227,7 +227,6 @@ def test_transform_cosine_x_sine_z(arrays, st, parameters):
 
 def test_transform_periodic_x_fdm_z(fdm_parameters):
     p = fdm_parameters
-    p.nz = 5
     array_factory = ArrayFactory(fdm_parameters, np)
     st = SpectralTransformer(fdm_parameters, np, array_factory=array_factory)
 
