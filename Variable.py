@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from BasisFunctions import BasisFunctions
+from BasisFunctions import BasisFunctions, is_fully_spectral
 
 class Variable:
     """
@@ -13,7 +13,8 @@ class Variable:
         self._st = st
         self._sd = sd
         self._dt = dt
-        self._array_factor = array_factory
+        self._array_factory = array_factory
+
         self._dump_name = dump_name
         self._dump_counter = 0
 
@@ -32,8 +33,9 @@ class Variable:
         elif self._basis_functions[1] is BasisFunctions.COSINE:
             self._ddz_factor = -np.pi/self._params.lz
 
-        n, m = array_factory.make_mode_number_matrices()
-        self.lap = -((n*np.abs(self._ddx_factor))**2 + (m*np.abs(self._ddz_factor))**2)
+        if self._params.is_fully_spectral():
+            n, m = array_factory.make_mode_number_matrices()
+            self.lap = -((n*np.abs(self._ddx_factor))**2 + (m*np.abs(self._ddz_factor))**2)
 
         xp = self._xp
         p = self._params
@@ -54,12 +56,6 @@ class Variable:
     def setp(self, data):
         """Setter for physical data"""
         self._pdata[:,:] = data[:,:]
-
-    def set_as_laplacian_soln(self, in_arr):
-        """Solves $\\omega = \\nabla^2 \\psi$ for $\\psi$ and sets this var to soln"""
-        self.lap[0,0] = 1
-        self.sets(in_arr/self.lap)
-        self.lap[0,0] = 0
 
     def getp(self):
         return self._pdata
@@ -110,6 +106,21 @@ class Variable:
     def sddz(self, out=None):
         """Calculate derivative of spectral data"""
         return self._sd.sddz(self.gets(), self._ddz_factor, out=out)
+
+    def nabla2(self, out=None):
+        if out is None:
+            out = self._array_factory.make_spectral()
+
+        if self._params.discretisation[0] == 'fdm':
+            out += self._sd.pd2dx2(self.gets())
+        else:
+            out += self._sd.sd2dx2(self.gets(), self._ddx_factor)
+        if self._params.discretisation[1] == 'fdm':
+            out += self._sd.pd2dz2(self.gets())
+        else:
+            out += self._sd.sd2dz2(self.gets(), self._ddz_factor)
+
+        return out
 
     def vec_dot_nabla(self, ux, uz, out=None):
         if out is None:
