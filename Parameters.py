@@ -57,8 +57,10 @@ class Parameters:
         if 'dump_cadence' not in params:
             self.dump_cadence = 0.1*self.final_time
 
-        self.nn = (self.nx-1)//3
-        self.nm = (self.nz-1)//3
+        if self.discretisation[0] == 'spectral':
+            self.nn = (self.nx-1)//3
+        if self.discretisation[1] == 'spectral':
+            self.nm = (self.nz-1)//3
 
         self.dx = self.lx/self.nx
         self.dz = self.lz/self.nz
