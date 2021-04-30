@@ -20,6 +20,8 @@ from ScalarTracker import ScalarTracker
 from RunningState import RunningState
 from ArrayFactory import ArrayFactory
 from Operators import double_fourier_viscous_op
+from BasisFunctions import BasisFunctions
+from LaplacianSolver import LaplacianSolver
 
 xp=cupy
 
@@ -30,12 +32,15 @@ def load_initial_conditions(params, w, tmp):
 
     rng = default_rng(0)
 
-    epsilon = 1e-2
+    epsilon = 1e-1
 
     w0_p = np.zeros_like(X)
-    tmp0_p = np.zeros_like(X)
+    tmp0_p = np.zeros_like(X) + 0.5
+    # tmp0_p = 1-Z
 
+    w0_p += epsilon*(2*rng.random((params.nx, params.nz))-1.0)
     tmp0_p += epsilon*(2*rng.random((params.nx, params.nz))-1.0)
+    # tmp0_p += epsilon*np.sin(np.pi*Z)*np.cos(2*np.pi*X)
 
     w.load(w0_p, is_physical=True)
     tmp.load(tmp0_p, is_physical=True)
@@ -45,11 +50,6 @@ def calc_kinetic_energy(ux, uz, xp, params):
     ke = uz.getp()**2 + ux.getp()**2
     total_ke = 0.5*xp.sum(ke)/(nx*nz)
     return total_ke
-
-def calc_nusselt_number(tmp, uz, xp, params):
-    # From Stellmach et al 2011 (DOI: 10.1017/jfm.2011.99)
-    flux = xp.mean(tmp.getp()*uz.getp())
-    return 1.0 - flux
 
 def form_dumpname(index):
     return f'dump{index:04d}.npz'
@@ -77,34 +77,31 @@ def load(index, xp, w, dw, tmp, dtmp):
 
 def main():
     PARAMS = {
-        "nx": 2**10,
-        "nz": 2**10,
-        "lx": 335.0,
-        "lz": 536.0,
-        "initial_dt": 1e-3,
+        "nx": 2**6,
+        "nz": 2**6,
+        "lx": 2.0,
+        "lz": 1.0,
+        "initial_dt": 1e-5,
         "cfl_cutoff": 0.5,
-        "Pr":7.0,
-        "R0":1.1,
-        "tau":1.0/3.0,
+        "Pr":1.0,
+        "Ra":1e6,
         "final_time": 1e-1,
         "spatial_derivative_order": 2,
         "integrator_order": 2,
         "integrator": "explicit",
-        "save_cadence": 1e-2,
+        "save_cadence": 5e-5,
         # "load_from": 49,
-        "dump_cadence": 10
+        "dump_cadence": 1e-1,
+        "discretisation": ['spectral', 'fdm']
     }
     params = Parameters(PARAMS)
     state = RunningState(params)
 
     data_trans = DataTransferer(xp)
-
     array_factory = ArrayFactory(params, xp)
-    # Create mode number matrix
-    n, m = array_factory.make_mode_number_matrices()
 
     # Algorithms
-    sd = SpatialDifferentiator(params, xp, n, m)
+    sd = SpatialDifferentiator(params, xp, array_factory=array_factory)
     st = SpectralTransformer(params, xp, array_factory)
     integrator = Integrator(params, xp)
 
@@ -114,14 +111,17 @@ def main():
 
     # Simulation variables
 
-    w = Variable(params, xp, sd=sd, st=st, dt=data_trans, array_factory=array_factory, dump_name="w")
+    w = Variable(params, xp, sd=sd, st=st, dt=data_trans, array_factory=array_factory, dump_name="w", basis_functions=[BasisFunctions.COMPLEX_EXP, BasisFunctions.FDM])
     dw = TimeDerivative(params, xp)
-    tmp = Variable(params, xp, sd=sd, st=st, dt=data_trans, array_factory=array_factory, dump_name="tmp")
+    tmp = Variable(params, xp, sd=sd, st=st, dt=data_trans, array_factory=array_factory, dump_name="tmp", basis_functions=[BasisFunctions.COMPLEX_EXP, BasisFunctions.FDM])
     dtmp = TimeDerivative(params, xp)
 
-    psi = Variable(params, xp, sd=sd, st=st, array_factory=array_factory, dump_name='psi')
-    ux = Variable(params, xp, sd=sd, st=st, array_factory=array_factory, dump_name='ux')
-    uz = Variable(params, xp, sd=sd, st=st, array_factory=array_factory, dump_name='uz')
+    psi = Variable(params, xp, sd=sd, st=st, array_factory=array_factory, dump_name='psi', basis_functions=[BasisFunctions.COMPLEX_EXP, BasisFunctions.FDM])
+    ux = Variable(params, xp, sd=sd, st=st, array_factory=array_factory, dump_name='ux', basis_functions=[BasisFunctions.COMPLEX_EXP, BasisFunctions.FDM])
+    uz = Variable(params, xp, sd=sd, st=st, array_factory=array_factory, dump_name='uz', basis_functions=[BasisFunctions.COMPLEX_EXP, BasisFunctions.FDM])
+
+    # Laplacian solver depends on psi for its basis calculation
+    laplacian_solver = LaplacianSolver(params, xp, psi, array_factory=array_factory)
 
     # Load initial conditions
 
@@ -144,8 +144,8 @@ def main():
                   f"t = {state.t:.2f}", 
                   f"dt = {state.dt:.2e}", 
                   f"Remaining: {wallclock_remaining/3600:.2f} hr")
-            # tmp.save()
-            ke_tracker.save()
+            tmp.save()
+            # ke_tracker.save()
             # nusselt_tracker.save()
 
         if state.dump_counter <= state.t:
@@ -159,7 +159,6 @@ def main():
             # Calculate kinetic energy
             state.ke_counter += params.ke_cadence
             ke_tracker.append(state.t, calc_kinetic_energy(ux, uz, xp, params))
-            nusselt_tracker.append(state.t, calc_nusselt_number(tmp, uz, xp, params))
 
             # Calculate remaining time in simulation
             timer.split()
@@ -170,25 +169,41 @@ def main():
             # Adapt timestep
             state.cfl_counter += params.cfl_cadence
             state.dt = integrator.set_dt(ux, uz)
+            if state.dt is None:
+                return
+
+        # omega boundary conditions
+        w[1:,0] = 0.0
+        w[1:,-1] = 0.0
 
         # SOLVER STARTS HERE
-        psi.set_as_laplacian_soln(-w.gets())
+        laplacian_solver.solve(-w.gets(), out=psi._sdata)
 
-        # Remove mean z variation
-        tmp[:,0] = 0.0
+        psi[1:,0] = 0.0
+        psi[1:,-1] = 0.0
 
-        ux[:] = -psi.sddz()
-        ux.to_physical()
+        psi[0,:] = 0.0
+        w[0,:] = 0.0
+
+        tmp[0,0] = 1.0
+        tmp[0,-1] = 0.0
+
+        tmp[1:,0] = 0.0
+        tmp[1:,-1] = 0.0
+
+        psi.to_physical()
+        ux.setp(-psi.pddz())
+
         uz[:] = psi.sddx()
         uz.to_physical()
 
-        lin_op = lambda var: return double_fourier_viscous_op(params.Pr, w)
-        dw[:] = -w.vec_dot_nabla(ux.getp(), uz.getp()) - params.Pr*tmp.sddx()
-        integrator.integrate(w, dw, lin_op)
+        diffusion_term = params.Pr*w.snabla2()
+        dw[:] = -w.vec_dot_nabla(ux.getp(), uz.getp()) - params.Pr*params.Ra*tmp.sddx()
+        integrator.integrate(w, dw, diffusion_term)
 
-        lin_op = lambda var: return double_fourier_viscous_op(1.0, tmp)
+        diffusion_term = tmp.snabla2()
         dtmp[:] = -tmp.vec_dot_nabla(ux.getp(), uz.getp())
-        integrator.integrate(tmp, dtmp, lin_op)
+        integrator.integrate(tmp, dtmp, diffusion_term)
 
         state.t += state.dt
         state.loop_counter += 1
