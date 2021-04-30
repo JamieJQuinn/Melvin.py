@@ -22,13 +22,19 @@ class LaplacianSolver:
                 self._sparse.dia_matrix(
                     (
                         self._xp.array(
-                            [-1.0/p.dz**2*ones,
-                             ((n_*np.abs(psi._ddx_factor))**2 + 2.0/p.dz**2)*ones,
-                             -1.0/p.dz**2*ones]
+                            [1.0/p.dz**2*ones,
+                             -((n_*np.abs(psi._ddx_factor))**2 + 2.0/p.dz**2)*ones,
+                             1.0/p.dz**2*ones]
                         ), offset), 
-                    shape=(p.nz, p.nz), dtype=p.float).tocsc()
+                    shape=(p.nz, p.nz), dtype=p.float).tocsr()
                 for n_ in range(p.nn)
             ]
+            # PSI boundary conditions
+            for lap in self.laps:
+                lap[0,0] = 1.0
+                lap[0,1] = 0.0
+                lap[-1,-1] = 1.0
+                lap[-1, -2] = 0.0
             self.solve = self._solve_fdm
 
     def _solve_fully_spectral(self, rhs, out=None):
