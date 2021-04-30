@@ -22,25 +22,25 @@ class SpatialDifferentiator:
 
     def sddx(self, var, ddx_factor, out=None):
         if out is not None:
-            out = ddx_factor*self._n*var
+            out[:] = ddx_factor*self._n*var
         else:
             return ddx_factor*self._n*var
 
     def sddz(self, var, ddz_factor, out=None):
         if out is not None:
-            out = ddz_factor*self._m*var
+            out[:] = ddz_factor*self._m*var
         else:
             return ddz_factor*self._m*var
 
     def sd2dx2(self, var, ddx_factor, out=None):
         if out is not None:
-            out = -(np.abs(ddx_factor)*self._n)**2*var
+            out[:] = -(np.abs(ddx_factor)*self._n)**2*var
         else:
             return -(np.abs(ddx_factor)*self._n)**2*var
 
     def sd2dz2(self, var, ddz_factor, out=None):
         if out is not None:
-            out = -(np.abs(ddz_factor)*self._m)**2*var
+            out[:] = -(np.abs(ddz_factor)*self._m)**2*var
         else:
             return -(np.abs(ddz_factor)*self._m)**2*var
 
@@ -72,7 +72,7 @@ class SpatialDifferentiator:
 
     def __p_d2dz2_central2(self, var, out=None):
         if out is None:
-            out = self._xp.zeros((self._params.nx, self._params.nz), dtype=self._params.float)
+            out = self._xp.zeros_like(var)
 
         dz = self._params.dz
 
