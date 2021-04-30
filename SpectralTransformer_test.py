@@ -221,3 +221,32 @@ def test_transform_cosine_x_sine_z(arrays, st, parameters):
     st.to_physical(spectral, physical, basis_functions=[BasisFunctions.COSINE, BasisFunctions.SINE])
 
     assert_array_almost_equal(physical, true_physical)
+
+
+def test_transform_periodic_x_fdm_z(fdm_parameters):
+    p = fdm_parameters
+    p.nz = 5
+    array_factory = ArrayFactory(fdm_parameters, np)
+    st = SpectralTransformer(fdm_parameters, np, array_factory=array_factory)
+
+    spectral = array_factory.make_spectral()
+    physical = array_factory.make_physical()
+
+    x = np.linspace(0, 1.0, p.nx, endpoint=False)
+    z = np.linspace(0, 1.0, p.nz)
+    X, Z = np.meshgrid(x, z, indexing='ij')
+
+    true_physical = 3.0 + np.cos(2*np.pi*X) + 2.0*np.cos(2*2*np.pi*X)
+
+    st.to_spectral(true_physical, spectral, basis_functions=[BasisFunctions.COMPLEX_EXP, BasisFunctions.FDM])
+
+    true_spectral = np.zeros_like(spectral)
+    true_spectral[0,:] = 3.0
+    true_spectral[1,:] = 1.0 / 2
+    true_spectral[2,:] = 2.0 / 2
+
+    assert_array_almost_equal(spectral, true_spectral)
+
+    st.to_physical(spectral, physical, basis_functions=[BasisFunctions.COMPLEX_EXP, BasisFunctions.FDM])
+
+    assert_array_almost_equal(physical, true_physical)
