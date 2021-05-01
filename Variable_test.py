@@ -50,3 +50,22 @@ def test_fdm_nabla2(fdm_parameters):
     true_nabla2[1] = -(2*np.pi)**2*var[1] + 1
 
     assert_array_almost_equal(nabla2[1, 1:-1], true_nabla2[1, 1:-1])
+
+def test_spectral_nabla2(parameters):
+    p = parameters
+    x = np.linspace(0, p.lx, p.nx, endpoint=False)
+    z = np.linspace(0, p.lz, p.nz, endpoint=False)
+    X, Z = np.meshgrid(x, z, indexing='ij')
+
+    array_factory = ArrayFactory(p, np)
+    spatial_diff = SpatialDifferentiator(p, np, array_factory=array_factory)
+
+    var = Variable(p, np, sd=spatial_diff, array_factory=array_factory)
+    var[:] = 1
+
+    nabla2 = var.snabla2()
+
+    n, m = array_factory.make_mode_number_matrices()
+    true_nabla2 = -(2*np.pi/p.lx*n)**2 - (2*np.pi/p.lz*m)**2
+
+    assert_array_almost_equal(nabla2, true_nabla2)

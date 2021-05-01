@@ -1,5 +1,5 @@
 import numpy as np
-from BasisFunctions import BasisFunctions
+from BasisFunctions import BasisFunctions, calc_diff_wavelength, gen_diff_factors, gen_diff2_factors
 
 class SpatialDifferentiator:
 
@@ -20,29 +20,48 @@ class SpatialDifferentiator:
             self.pddx = self.__p_ddx_central4
             self.pddz = self.__p_ddz_central4
 
-    def sddx(self, var, ddx_factor, out=None):
-        if out is not None:
-            out[:] = ddx_factor*self._n*var
-        else:
-            return ddx_factor*self._n*var
+        if params.discretisation[0] == 'fdm':
+            # self.sddx = self.pddx
+            # self.sd2dx2 = self.pd2dx2
+            raise NotImplementedError("Finite difference not implemented in x direction")
+        elif params.discretisation[0] == 'spectral':
+            self.sddx = self.__s_ddx
+            self.sd2dx2 = self.__s_d2dx2
 
-    def sddz(self, var, ddz_factor, out=None):
-        if out is not None:
-            out[:] = ddz_factor*self._m*var
-        else:
-            return ddz_factor*self._m*var
+        if params.discretisation[1] == 'fdm':
+            self.sddz = lambda var, bs : self.pddz(var) # This strips out the extra paramters not required by pddx
+            self.sd2dz2 = lambda var, bs : self.pd2dz2(var)
+        elif params.discretisation[1] == 'spectral':
+            self.sddz = self.__s_ddz
+            self.sd2dz2 = self.__s_d2dz2
 
-    def sd2dx2(self, var, ddx_factor, out=None):
-        if out is not None:
-            out[:] = -(np.abs(ddx_factor)*self._n)**2*var
-        else:
-            return -(np.abs(ddx_factor)*self._n)**2*var
+        self._diffx_factors = gen_diff_factors(params.lx)
+        self._diffz_factors = gen_diff_factors(params.lz)
+        self._diff2x_factors = gen_diff2_factors(params.lx)
+        self._diff2z_factors = gen_diff2_factors(params.lz)
 
-    def sd2dz2(self, var, ddz_factor, out=None):
-        if out is not None:
-            out[:] = -(np.abs(ddz_factor)*self._m)**2*var
-        else:
-            return -(np.abs(ddz_factor)*self._m)**2*var
+    def __s_ddx(self, var, basis_fn):
+        """Calculate first order derivative wrt x in spectral space"""
+        diff_factor = self._diffx_factors[basis_fn]
+        return diff_factor*self._n*var
+
+    def __s_ddz(self, var, basis_fn):
+        """Calculate first order derivative wrt z in spectral space"""
+        diff_factor = self._diffz_factors[basis_fn]
+        return diff_factor*self._m*var
+
+    def __s_d2dx2(self, var, basis_fn):
+        """Calculate second order derivative wrt x in spectral space"""
+        diff2_factor = self._diff2x_factors[basis_fn]
+        return diff2_factor*self._n**2*var
+
+    def __s_d2dz2(self, var, basis_fn):
+        """Calculate second order derivative wrt z in spectral space"""
+        diff2_factor = self._diff2z_factors[basis_fn]
+        return diff2_factor*self._m**2*var
+
+    def calc_lap(self, basis_fns):
+        return self._diff2x_factors[basis_fns[0]]*self._n**2 + self._diff2z_factors[basis_fns[1]]*self._m**2
 
     def __p_ddx_central2(self, var, out=None):
         if out is None:

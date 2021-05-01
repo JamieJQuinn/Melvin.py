@@ -19,7 +19,6 @@ from Timer import Timer
 from ScalarTracker import ScalarTracker
 from RunningState import RunningState
 from ArrayFactory import ArrayFactory
-from Operators import double_fourier_viscous_op
 from BasisFunctions import BasisFunctions
 from LaplacianSolver import LaplacianSolver
 
@@ -107,21 +106,22 @@ def main():
 
     # Trackers
     ke_tracker = ScalarTracker(params, xp, "kinetic_energy.npz")
-    nusselt_tracker = ScalarTracker(params, xp, "nusselt.npz")
 
     # Simulation variables
 
-    w = Variable(params, xp, sd=sd, st=st, dt=data_trans, array_factory=array_factory, dump_name="w", basis_functions=[BasisFunctions.COMPLEX_EXP, BasisFunctions.FDM])
+    bs = [BasisFunctions.COMPLEX_EXP, BasisFunctions.FDM]
+
+    w = Variable(params, xp, sd=sd, st=st, dt=data_trans, array_factory=array_factory, dump_name="w", basis_functions=bs)
     dw = TimeDerivative(params, xp)
-    tmp = Variable(params, xp, sd=sd, st=st, dt=data_trans, array_factory=array_factory, dump_name="tmp", basis_functions=[BasisFunctions.COMPLEX_EXP, BasisFunctions.FDM])
+    tmp = Variable(params, xp, sd=sd, st=st, dt=data_trans, array_factory=array_factory, dump_name="tmp", basis_functions=bs)
     dtmp = TimeDerivative(params, xp)
 
-    psi = Variable(params, xp, sd=sd, st=st, array_factory=array_factory, dump_name='psi', basis_functions=[BasisFunctions.COMPLEX_EXP, BasisFunctions.FDM])
-    ux = Variable(params, xp, sd=sd, st=st, array_factory=array_factory, dump_name='ux', basis_functions=[BasisFunctions.COMPLEX_EXP, BasisFunctions.FDM])
-    uz = Variable(params, xp, sd=sd, st=st, array_factory=array_factory, dump_name='uz', basis_functions=[BasisFunctions.COMPLEX_EXP, BasisFunctions.FDM])
+    psi = Variable(params, xp, sd=sd, st=st, array_factory=array_factory, dump_name='psi', basis_functions=bs)
+    ux = Variable(params, xp, sd=sd, st=st, array_factory=array_factory, dump_name='ux', basis_functions=bs)
+    uz = Variable(params, xp, sd=sd, st=st, array_factory=array_factory, dump_name='uz', basis_functions=bs)
 
     # Laplacian solver depends on psi for its basis calculation
-    laplacian_solver = LaplacianSolver(params, xp, psi, array_factory=array_factory)
+    laplacian_solver = LaplacianSolver(params, xp, psi._basis_functions, spatial_diff=sd, array_factory=array_factory)
 
     # Load initial conditions
 
@@ -145,6 +145,7 @@ def main():
                   f"dt = {state.dt:.2e}", 
                   f"Remaining: {wallclock_remaining/3600:.2f} hr")
             tmp.save()
+            w.save()
             # ke_tracker.save()
             # nusselt_tracker.save()
 
@@ -204,6 +205,8 @@ def main():
         diffusion_term = tmp.snabla2()
         dtmp[:] = -tmp.vec_dot_nabla(ux.getp(), uz.getp())
         integrator.integrate(tmp, dtmp, diffusion_term)
+
+        tmp.to_physical()
 
         state.t += state.dt
         state.loop_counter += 1

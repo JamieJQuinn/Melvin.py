@@ -19,6 +19,7 @@ from Timer import Timer
 from ScalarTracker import ScalarTracker
 from RunningState import RunningState
 from ArrayFactory import ArrayFactory
+from LaplacianSolver import LaplacianSolver
 
 xp=cupy
 
@@ -35,6 +36,7 @@ def load_initial_conditions(params, w, tmp, xi):
     tmp0_p = np.zeros_like(X)
     xi0_p = np.zeros_like(X)
 
+    w0_p += epsilon*(2*rng.random((params.nx, params.nz))-1.0)
     tmp0_p += epsilon*(2*rng.random((params.nx, params.nz))-1.0)
     xi0_p += epsilon*(2*rng.random((params.nx, params.nz))-1.0)
 
@@ -84,8 +86,8 @@ def load(index, xp, w, dw, tmp, dtmp, xi, dxi):
 
 def main():
     PARAMS = {
-        "nx": 2**11,
-        "nz": 2**11,
+        "nx": 2**8,
+        "nz": 2**8,
         "lx": 335.0,
         "lz": 536.0,
         "initial_dt": 1e-3,
@@ -93,11 +95,11 @@ def main():
         "Pr":7.0,
         "R0":1.1,
         "tau":1.0/3.0,
-        "final_time": 1,
+        "final_time": 50,
         "spatial_derivative_order": 2,
         "integrator_order": 2,
         "integrator": "semi-implicit",
-        "save_cadence": 10,
+        "save_cadence": 1,
         # "load_from": 49,
         "dump_cadence": 10
     }
@@ -105,13 +107,10 @@ def main():
     state = RunningState(params)
 
     data_trans = DataTransferer(xp)
-
     array_factory = ArrayFactory(params, xp)
-    # Create mode number matrix
-    n, m = array_factory.make_mode_number_matrices()
 
     # Algorithms
-    sd = SpatialDifferentiator(params, xp, n, m)
+    sd = SpatialDifferentiator(params, xp, array_factory)
     st = SpectralTransformer(params, xp, array_factory)
     integrator = Integrator(params, xp)
 
@@ -131,6 +130,8 @@ def main():
     psi = Variable(params, xp, sd=sd, st=st, array_factory=array_factory, dump_name='psi')
     ux = Variable(params, xp, sd=sd, st=st, array_factory=array_factory, dump_name='ux')
     uz = Variable(params, xp, sd=sd, st=st, array_factory=array_factory, dump_name='uz')
+
+    laplacian_solver = LaplacianSolver(params, xp, psi._basis_functions, spatial_diff=sd, array_factory=array_factory)
 
     # Load initial conditions
 
@@ -153,16 +154,16 @@ def main():
                   f"t = {state.t:.2f}", 
                   f"dt = {state.dt:.2e}", 
                   f"Remaining: {wallclock_remaining/3600:.2f} hr")
-            # tmp.save()
+            tmp.save()
             # ke_tracker.save()
             # nusselt_tracker.save()
 
-        # if state.dump_counter <= state.t:
-            # state.dump_counter += params.dump_cadence
-            # dump(state.dump_index, xp, data_trans,
-                 # w, dw, tmp, dtmp, xi, dxi)
-            # state.save(state.dump_index)
-            # state.dump_index += 1
+        if state.dump_counter <= state.t:
+            state.dump_counter += params.dump_cadence
+            dump(state.dump_index, xp, data_trans,
+                 w, dw, tmp, dtmp, xi, dxi)
+            state.save(state.dump_index)
+            state.dump_index += 1
 
         if state.ke_counter < state.loop_counter:
             # Calculate kinetic energy
@@ -181,7 +182,7 @@ def main():
             state.dt = integrator.set_dt(ux, uz)
 
         # SOLVER STARTS HERE
-        psi.set_as_laplacian_soln(-w.gets())
+        laplacian_solver.solve(-w.gets(), out=psi._sdata)
 
         # Remove mean z variation
         tmp[:,0] = 0.0
@@ -192,16 +193,15 @@ def main():
         uz[:] = psi.sddx()
         uz.to_physical()
 
-        # lin_op = params.Pr*lap_solver.lap
-        lin_op = params.Pr*w.lap
+        lin_op = params.Pr*w.lap()
         dw[:] = -w.vec_dot_nabla(ux.getp(), uz.getp()) + params.Pr*xi.sddx() - params.Pr*tmp.sddx()
         integrator.integrate(w, dw, lin_op)
 
-        lin_op = tmp.lap
+        lin_op = tmp.lap()
         dtmp[:] = -tmp.vec_dot_nabla(ux.getp(), uz.getp()) - uz[:]
         integrator.integrate(tmp, dtmp, lin_op)
 
-        lin_op = params.tau*xi.lap
+        lin_op = params.tau*xi.lap()
         dxi[:] = -xi.vec_dot_nabla(ux.getp(), uz.getp()) - uz[:]/params.R0
         integrator.integrate(xi, dxi, lin_op)
 
