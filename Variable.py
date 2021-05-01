@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from BasisFunctions import BasisFunctions
+from BasisFunctions import BasisFunctions, is_fully_spectral, calc_diff_wavelength
 
 class Variable:
     """
@@ -13,30 +13,12 @@ class Variable:
         self._st = st
         self._sd = sd
         self._dt = dt
-        self._array_factor = array_factory
+        self._array_factory = array_factory
+
         self._dump_name = dump_name
         self._dump_counter = 0
 
         self._basis_functions = basis_functions
-        if self._basis_functions[0] is BasisFunctions.COMPLEX_EXP:
-            self._ddx_factor = 1j*2*np.pi/self._params.lx
-        elif self._basis_functions[0] is BasisFunctions.SINE:
-            self._ddx_factor = np.pi/self._params.lx
-        elif self._basis_functions[0] is BasisFunctions.COSINE:
-            self._ddx_factor = -np.pi/self._params.lx
-
-        if self._basis_functions[1] is BasisFunctions.COMPLEX_EXP:
-            self._ddz_factor = 1j*2*np.pi/self._params.lz
-        elif self._basis_functions[1] is BasisFunctions.SINE:
-            self._ddz_factor = np.pi/self._params.lz
-        elif self._basis_functions[1] is BasisFunctions.COSINE:
-            self._ddz_factor = -np.pi/self._params.lz
-
-        n, m = array_factory.make_mode_number_matrices()
-        self.lap = -((n*np.abs(self._ddx_factor))**2 + (m*np.abs(self._ddz_factor))**2)
-
-        xp = self._xp
-        p = self._params
 
         self._sdata = array_factory.make_spectral()
         self._pdata = array_factory.make_physical()
@@ -54,12 +36,6 @@ class Variable:
     def setp(self, data):
         """Setter for physical data"""
         self._pdata[:,:] = data[:,:]
-
-    def set_as_laplacian_soln(self, in_arr):
-        """Solves $\\omega = \\nabla^2 \\psi$ for $\\psi$ and sets this var to soln"""
-        self.lap[0,0] = 1
-        self.sets(in_arr/self.lap)
-        self.lap[0,0] = 0
 
     def getp(self):
         return self._pdata
@@ -95,21 +71,37 @@ class Variable:
                 data = scale_variable(data, (nn, nm), self._xp)
             self.sets(data)
 
-    def pddx(self, out=None):
+    def pddx(self):
         """Calculate spatial derivative of physical data"""
-        return self._sd.pddx(self.getp(), out=out)
+        return self._sd.pddx(self.getp())
 
-    def pddz(self, out=None):
+    def pddz(self):
         """Calculate spatial derivative of physical data"""
-        return self._sd.pddz(self.getp(), out=out)
+        return self._sd.pddz(self.getp())
 
-    def sddx(self, out=None):
-        """Calculate derivative of spectral data"""
-        return self._sd.sddx(self.gets(), self._ddx_factor, out=out)
+    def sddx(self):
+        """Calculate first derivative of spectral data"""
+        return self._sd.sddx(self.gets(), self._basis_functions[0])
 
-    def sddz(self, out=None):
-        """Calculate derivative of spectral data"""
-        return self._sd.sddz(self.gets(), self._ddz_factor, out=out)
+    def sddz(self):
+        """Calculate first derivative of spectral data"""
+        return self._sd.sddz(self.gets(), self._basis_functions[1])
+
+    def sd2dx2(self):
+        """Calculate second derivative of spectral data"""
+        return self._sd.sd2dx2(self.gets(), self._basis_functions[0])
+
+    def sd2dz2(self):
+        """Calculate second derivative of spectral data"""
+        return self._sd.sd2dz2(self.gets(), self._basis_functions[1])
+
+    def snabla2(self):
+        """Calculate $\nabla^2$ in spectral form"""
+        return self.sd2dx2() + self.sd2dz2()
+
+    def lap(self):
+        """Returns linear operator representing laplacian"""
+        return self._sd.calc_lap(self._basis_functions)
 
     def vec_dot_nabla(self, ux, uz, out=None):
         if out is None:
@@ -117,7 +109,7 @@ class Variable:
 
         self.to_physical()
         out[:] = self._sd.pddx(ux*self.getp()) + self._sd.pddz(uz*self.getp())
-        return self._st.to_spectral(out)
+        return self._st.to_spectral(out, basis_functions=self._basis_functions)
 
     def save(self):
         fname = self._dump_name + f'{self._dump_counter:04d}.npy'

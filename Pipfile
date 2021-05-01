@@ -10,10 +10,10 @@ numpy = "*"
 scipy = "*"
 jupyter = "*"
 matplotlib = "*"
-cupy-cuda111 = "*"
+cupy-cuda112 = "*"
 imageio = "*"
 pytest = "*"
 cmocean = "*"
 
 [requires]
-python_version = "3.8"
+python_version = "3.9"

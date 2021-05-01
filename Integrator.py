@@ -30,12 +30,12 @@ class Integrator:
     def get_dt(self):
         return self._dt
 
-    def _explicit(self, var, dvar, lin_op):
-        dvar[:] += lin_op*var[:]
+    def _explicit(self, var, dvar, diffusion_term):
+        dvar[:] += diffusion_term
         var[:] += self.predictor(dvar)
         dvar.advance()
 
-    def _semi_implicit(self, var, dvar, lin_op):
+    def _semi_implicit_spectral(self, var, dvar, lin_op):
         alpha = self._alpha
         dt = self._dt
         RHS = (1+(1-alpha)*dt*lin_op)*var[:] + self.predictor(dvar)
@@ -56,7 +56,8 @@ class Integrator:
             self.corrector = self._adams_moulton_4
 
         if params.integrator == "semi-implicit":
-            self.integrate = self._semi_implicit
-            self._alpha = params.alpha
+            if params.is_fully_spectral():
+                self.integrate = self._semi_implicit_spectral
+                self._alpha = params.alpha
         elif params.integrator == "explicit":
             self.integrate = self._explicit

@@ -4,7 +4,8 @@ from pytest import approx
 from numpy.testing import assert_array_almost_equal
 
 from BasisFunctions import BasisFunctions
-
+from ArrayFactory import ArrayFactory
+from SpectralTransformer import SpectralTransformer
 
 @pytest.fixture
 def periodic_coordinates(parameters):
@@ -174,7 +175,7 @@ def test_transform_sine_x_cosine_z(arrays, st, parameters):
 
     p = parameters
     x = np.linspace(0, 1.0, p.nx, endpoint=True)
-    z = np.linspace(0, 1.0, p.nz, endpoint=False)
+    z = np.linspace(0, 1.0, p.nz, endpoint=True)
     X, Z = np.meshgrid(x, z, indexing='ij')
 
     true_physical = np.sin(np.pi*X) + 2.0*np.sin(2*np.pi*X)
@@ -199,6 +200,7 @@ def test_transform_cosine_x_sine_z(arrays, st, parameters):
     spectral, physical = arrays
 
     p = parameters
+
     x = np.linspace(0, 1.0, p.nx, endpoint=True)
     z = np.linspace(0, 1.0, p.nz, endpoint=True)
     X, Z = np.meshgrid(x, z, indexing='ij')
@@ -219,5 +221,33 @@ def test_transform_cosine_x_sine_z(arrays, st, parameters):
     assert_array_almost_equal(spectral, true_spectral)
 
     st.to_physical(spectral, physical, basis_functions=[BasisFunctions.COSINE, BasisFunctions.SINE])
+
+    assert_array_almost_equal(physical, true_physical)
+
+
+def test_transform_periodic_x_fdm_z(fdm_parameters):
+    p = fdm_parameters
+    array_factory = ArrayFactory(fdm_parameters, np)
+    st = SpectralTransformer(fdm_parameters, np, array_factory=array_factory)
+
+    spectral = array_factory.make_spectral()
+    physical = array_factory.make_physical()
+
+    x = np.linspace(0, 1.0, p.nx, endpoint=False)
+    z = np.linspace(0, 1.0, p.nz)
+    X, Z = np.meshgrid(x, z, indexing='ij')
+
+    true_physical = 3.0 + np.cos(2*np.pi*X) + 2.0*np.cos(2*2*np.pi*X)
+
+    st.to_spectral(true_physical, spectral, basis_functions=[BasisFunctions.COMPLEX_EXP, BasisFunctions.FDM])
+
+    true_spectral = np.zeros_like(spectral)
+    true_spectral[0,:] = 3.0
+    true_spectral[1,:] = 1.0 / 2
+    true_spectral[2,:] = 2.0 / 2
+
+    assert_array_almost_equal(spectral, true_spectral)
+
+    st.to_physical(spectral, physical, basis_functions=[BasisFunctions.COMPLEX_EXP, BasisFunctions.FDM])
 
     assert_array_almost_equal(physical, true_physical)
