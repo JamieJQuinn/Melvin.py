@@ -99,10 +99,9 @@ class SpectralTransformer:
         if basis_functions[1] is BasisFunctions.COSINE:
             in_arr[:,0] *= 2
 
-        in_arr *= x_factor*z_factor
-
         upscaled = self._array_factory.make_spectral(upscale_size[0], upscale_size[1])
         self._scale(in_arr, upscaled)
+        upscaled *= x_factor*z_factor
         fft_result = self._xp.fft.irfft2(upscaled)
 
         if basis_functions[0] is BasisFunctions.COSINE or basis_functions[0] is BasisFunctions.SINE:
