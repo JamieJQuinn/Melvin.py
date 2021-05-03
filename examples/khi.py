@@ -5,16 +5,11 @@ from numpy.random import default_rng
 
 import cupy
 import time
-from utility import sech
 import matplotlib.pyplot as plt
+from melvin.utility import sech
 
-from Parameters import Parameters
-from SpectralTransformer import SpectralTransformer
-from DataTransferer import DataTransferer
-from Variable import Variable
-from TimeDerivative import TimeDerivative
-from LaplacianSolver import LaplacianSolver
-from Integrator import Integrator
+from melvin import Parameters, SpectralTransformer, DataTransferer, \
+        Variable, TimeDerivative, LaplacianSolver, Integrator
 
 MODULE=cupy
 

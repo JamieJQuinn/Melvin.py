@@ -5,21 +5,11 @@ from numpy.random import default_rng
 
 import cupy
 import time
-from utility import sech
 import matplotlib.pyplot as plt
 
-from Parameters import Parameters
-from SpectralTransformer import SpectralTransformer
-from DataTransferer import DataTransferer
-from Variable import Variable
-from TimeDerivative import TimeDerivative
-from SpatialDifferentiator import SpatialDifferentiator
-from Integrator import Integrator
-from Timer import Timer
-from ScalarTracker import ScalarTracker
-from RunningState import RunningState
-from ArrayFactory import ArrayFactory
-from LaplacianSolver import LaplacianSolver
+from melvin import Parameters, SpectralTransformer, DataTransferer, Variable,\
+        TimeDerivative, SpatialDifferentiator, Integrator, Timer, ScalarTracker, \
+        RunningState, ArrayFactory, LaplacianSolver
 
 xp=cupy
 
