@@ -5,7 +5,7 @@
 
 <!-- description -->
 <p align="center">
-  <strong>A Python-powered GPU-accelerated framework for solving 2D computational fluids problems 💧</strong>
+  <strong>A Python-powered GPU-accelerated framework for solving 2D computational fluid dynamics problems 💧</strong>
 </p>
 
 <!-- Information badges -->
@@ -29,19 +29,15 @@
   <a href="https://github.com/JamieJQuinn/Melvin.py/releases">
     <img alt="GitHub tag (latest SemVer pre-release)" src="https://img.shields.io/github/v/tag/jamiejquinn/melvin.py?include_prereleases&label=latest%20version&logo=github&sort=semver&style=flat-square">
   </a>
+    <a href="https://github.com/JamieJQuinn/Melvin.py/actions/workflows/pytest.yml">
+    <img alt="Continuous testing" src="https://github.com/jamiejquinn/melvin.py/actions/workflows/pytest.yml/badge.svg">
+  </a>
   <!--<a href="https://clima.github.io/OceananigansDocumentation/stable">-->
     <!--<img alt="Stable documentation" src="https://img.shields.io/badge/documentation-stable%20release-blue?style=flat-square">-->
   <!--</a>-->
   <!--<a href="https://clima.github.io/OceananigansDocumentation/dev">-->
     <!--<img alt="Development documentation" src="https://img.shields.io/badge/documentation-in%20development-orange?style=flat-square">-->
   <!--</a>-->
-</p>
-
-<!--Continuous integration-->
-<p align="center">
-  <a href="https://github.com/JamieJQuinn/Melvin.py/actions/workflows/pytest.yml">
-    <img alt="Continuous testing" src="https://github.com/jamiejquinn/melvin.py/actions/workflows/pytest.yml/badge.svg">
-  </a>
 </p>
 
 Melvin.py is a user-friendly framework for building GPU-accelerated spectral simulations of 2-dimensional computational fluid dynamics problems. This is still a work-in-progress project however the following features are functional:
