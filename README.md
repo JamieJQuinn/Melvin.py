@@ -75,8 +75,6 @@ You can install the latest version of Melvin using the Python package manager `p
 pip install melvin
 ```
 
-At this time, updating should be done with care, as Oceananigans is under rapid development and breaking changes to the user API occur often. But if anything does happen, please open an issue!
-
 **Note**: Melvin is tested with Python 3.9. Older versions of Python 3 may work but YMMV.
 
 ## Running an example
@@ -97,7 +95,7 @@ python ../examples/ddc.py
 
 ## Getting help
 
-If you are interested in using Melvin.py or are trying to figure out how to use it, please feel free to ask questions and get in touch! Please bear in mind that this is still a WIP and all documentation and functionality is subject to rapid change.
+If you are interested in using Melvin.py or are trying to figure out how to use it, please feel free to ask questions and get in touch via email (jamiejquinn [at] jamiejquinn.com)!
 
 ## Contributing
 
