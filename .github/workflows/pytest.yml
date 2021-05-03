@@ -26,7 +26,7 @@ jobs:
           architecture: x64
 
       - name: Install pipenv environment
-        run: pip install pipenv && pipenv install
+        run: pip install melvin
 
       - name: Test
-        run: pipenv run pytest
+        run: pytest
