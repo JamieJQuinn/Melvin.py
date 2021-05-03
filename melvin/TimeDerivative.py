@@ -1,4 +1,4 @@
-from Variable import scale_variable
+from melvin.Variable import scale_variable
 
 class TimeDerivative:
     """

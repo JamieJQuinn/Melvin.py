@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from BasisFunctions import BasisFunctions, is_fully_spectral, calc_diff_wavelength
+from melvin.BasisFunctions import BasisFunctions, is_fully_spectral, calc_diff_wavelength
 
 class Variable:
     """

@@ -1,6 +1,6 @@
 import numpy as np
-from utility import load_scipy_sparse, load_scipy_sparse_linalg
-from BasisFunctions import calc_diff_factor
+from melvin.utility import load_scipy_sparse, load_scipy_sparse_linalg
+from melvin.BasisFunctions import calc_diff_factor
 
 class LaplacianSolver:
     def __init__(self, params, xp, basis_fns, spatial_diff=None, array_factory=None):

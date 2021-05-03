@@ -1,5 +1,5 @@
 import numpy as np
-from BasisFunctions import BasisFunctions, calc_diff_wavelength, gen_diff_factors, gen_diff2_factors
+from melvin.BasisFunctions import BasisFunctions, calc_diff_wavelength, gen_diff_factors, gen_diff2_factors
 
 class SpatialDifferentiator:
 

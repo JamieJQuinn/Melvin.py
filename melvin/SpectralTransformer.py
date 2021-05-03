@@ -1,4 +1,4 @@
-from BasisFunctions import BasisFunctions
+from melvin.BasisFunctions import BasisFunctions
 
 class SpectralTransformer:
     def __init__(self, params, xp, array_factory):
