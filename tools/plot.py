@@ -10,7 +10,10 @@ MOVING_AVERAGE_N = 10
 parser = argparse.ArgumentParser(description="Plot Melvin save files")
 parser.add_argument("filenames", nargs="+", help="file to plot")
 parser.add_argument(
-    "--aspect_ratio", default=0.5, type=float, help="aspect ratio of physical data"
+    "--aspect_ratio",
+    default=0.5,
+    type=float,
+    help="aspect ratio of physical data",
 )
 parser.add_argument("--slice", nargs=2, type=int, help="axis to slice along")
 parser.add_argument(
@@ -19,20 +22,28 @@ parser.add_argument(
 parser.add_argument(
     "--figsize", nargs=2, type=int, default=[5, 10], help="figsize in inches"
 )
-parser.add_argument("--contour", action="store_true", help="enables contour plotting")
+parser.add_argument(
+    "--contour", action="store_true", help="enables contour plotting"
+)
 parser.add_argument("--colorbar", action="store_true", help="add colorbar")
 parser.add_argument(
     "--balance_cmap",
     action="store_true",
     help='ensure "middle" of colourmap represents value of 0',
 )
-parser.add_argument("--cmap", default=cmocean.cm.deep, help="matplotlib colormap")
+parser.add_argument(
+    "--cmap", default=cmocean.cm.deep, help="matplotlib colormap"
+)
 parser.add_argument("--pretty", action="store_true", help="make pretty")
 parser.add_argument(
-    "--smooth", action="store_true", help="smooth cmap changes using moving average"
+    "--smooth",
+    action="store_true",
+    help="smooth cmap changes using moving average",
 )
 parser.add_argument("--save", action="store_true", help="save to <inname>.png")
-parser.add_argument("--replace", action="store_true", help="overwrite existing outputs")
+parser.add_argument(
+    "--replace", action="store_true", help="overwrite existing outputs"
+)
 args = parser.parse_args()
 
 
@@ -93,7 +104,9 @@ def plot(v):
         elif mode == "physical":
             extent = [0, args.aspect_ratio, 0, 1]
             if args.contour:
-                plt.contour(data.T, origin="lower", extent=extent, cmap=args.cmap)
+                plt.contour(
+                    data.T, origin="lower", extent=extent, cmap=args.cmap
+                )
             else:
                 if args.pretty:
                     fig, ax = plt.subplots(figsize=args.figsize)

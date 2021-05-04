@@ -4,7 +4,9 @@ from melvin.BasisFunctions import calc_diff_factor
 
 
 class LaplacianSolver:
-    def __init__(self, params, xp, basis_fns, spatial_diff=None, array_factory=None):
+    def __init__(
+        self, params, xp, basis_fns, spatial_diff=None, array_factory=None
+    ):
         self._params = params
         self._xp = xp
         self._sparse = load_scipy_sparse(xp)
@@ -27,7 +29,10 @@ class LaplacianSolver:
                         self._xp.array(
                             [
                                 1.0 / p.dz ** 2 * ones,
-                                -((n_ * np.abs(ddx_factor)) ** 2 + 2.0 / p.dz ** 2)
+                                -(
+                                    (n_ * np.abs(ddx_factor)) ** 2
+                                    + 2.0 / p.dz ** 2
+                                )
                                 * ones,
                                 1.0 / p.dz ** 2 * ones,
                             ]
@@ -48,7 +53,8 @@ class LaplacianSolver:
             self.solve = self._solve_fdm
 
     def _solve_fully_spectral(self, rhs, out=None):
-        """Solves $\\omega = \\nabla^2 \\psi$ for $\\psi$ and sets this var to soln"""
+        """Solves $\\omega = \\nabla^2 \\psi$
+        for $\\psi$ and sets this var to soln"""
         if out is None:
             out = self._array_factory.make_spectral()
 

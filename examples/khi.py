@@ -5,7 +5,6 @@ from numpy.random import default_rng
 
 import cupy
 import time
-import matplotlib.pyplot as plt
 from melvin.utility import sech
 
 from melvin import (
@@ -31,9 +30,9 @@ def load_initial_conditions(params, w, ink):
     rng = default_rng(0)
 
     epsilon = 0.1
-    sigma = 0.2
+    # sigma = 0.2
     h = 0.05
-    pert_n = 1
+    # pert_n = 1
 
     ## Set vorticity
     w0_p = np.power(sech((R - 0.25) / h), 2) / h
@@ -84,7 +83,7 @@ def main():
     dw = TimeDerivative(params, MODULE)
 
     ink = Variable(params, MODULE, st, dt, dump_name="ink")
-    dink = TimeDerivative(params, MODULE)
+    # dink = TimeDerivative(params, MODULE)
 
     psi = Variable(params, MODULE, st)
     ux = Variable(params, MODULE, st)
@@ -122,10 +121,12 @@ def main():
 
         w.to_physical()
         dw[:] = -w.vec_dot_nabla(ux.getp(), uz.getp())
-        RHS = (1 + (1 - params.alpha) * params.dt / params.Re * lap_solver.lap) * w[
-            :
-        ] + integrator.predictor(dw)
-        w[:] = RHS / (1 - params.alpha * params.dt / params.Re * lap_solver.lap)
+        RHS = (
+            1 + (1 - params.alpha) * params.dt / params.Re * lap_solver.lap
+        ) * w[:] + integrator.predictor(dw)
+        w[:] = RHS / (
+            1 - params.alpha * params.dt / params.Re * lap_solver.lap
+        )
         dw.advance()
 
         # ink

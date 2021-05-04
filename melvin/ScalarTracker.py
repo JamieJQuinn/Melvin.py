@@ -1,6 +1,3 @@
-import numpy as np
-
-
 class ScalarTracker:
     """Tracks a scalar through time"""
 

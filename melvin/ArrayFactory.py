@@ -10,7 +10,10 @@ class ArrayFactory:
 
         if params.is_fully_spectral():
             n = self._xp.concatenate(
-                (self._xp.arange(0, params.nn + 1), self._xp.arange(-params.nn, 0))
+                (
+                    self._xp.arange(0, params.nn + 1),
+                    self._xp.arange(-params.nn, 0),
+                )
             )
             m = self._xp.arange(0, params.nm)
         elif params.discretisation[0] == "fdm":
@@ -35,9 +38,9 @@ class ArrayFactory:
             ni = self._p.spectral_shape[0]
         if nj is None:
             nj = self._p.spectral_shape[1]
-        dtype = (
-            self._p.complex
-        )  # TODO change this when dealing with e.g. sine basis functions. Complex isn't needed in that case
+        # TODO change this when dealing with e.g. sine basis functions
+        # Complex isn't needed in that case
+        dtype = self._p.complex
 
         return self._xp.zeros((ni, nj), dtype=dtype)
 

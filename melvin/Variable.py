@@ -1,8 +1,5 @@
-import numpy as np
 from melvin.BasisFunctions import (
     BasisFunctions,
-    is_fully_spectral,
-    calc_diff_wavelength,
 )
 
 
@@ -20,7 +17,10 @@ class Variable:
         dt=None,
         array_factory=None,
         dump_name=None,
-        basis_functions=[BasisFunctions.COMPLEX_EXP, BasisFunctions.COMPLEX_EXP],
+        basis_functions=[
+            BasisFunctions.COMPLEX_EXP,
+            BasisFunctions.COMPLEX_EXP,
+        ],
     ):
         self._params = params
         self._xp = xp
@@ -123,7 +123,9 @@ class Variable:
 
         if convert_to_physical:
             self.to_physical()
-        out[:] = self._sd.pddx(ux * self.getp()) + self._sd.pddz(uz * self.getp())
+        out[:] = self._sd.pddx(ux * self.getp()) + self._sd.pddz(
+            uz * self.getp()
+        )
         return self._st.to_spectral(out, basis_functions=self._basis_functions)
 
     def save(self):

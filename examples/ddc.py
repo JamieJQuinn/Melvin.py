@@ -164,11 +164,19 @@ def main():
     psi = Variable(
         params, xp, sd=sd, st=st, array_factory=array_factory, dump_name="psi"
     )
-    ux = Variable(params, xp, sd=sd, st=st, array_factory=array_factory, dump_name="ux")
-    uz = Variable(params, xp, sd=sd, st=st, array_factory=array_factory, dump_name="uz")
+    ux = Variable(
+        params, xp, sd=sd, st=st, array_factory=array_factory, dump_name="ux"
+    )
+    uz = Variable(
+        params, xp, sd=sd, st=st, array_factory=array_factory, dump_name="uz"
+    )
 
     laplacian_solver = LaplacianSolver(
-        params, xp, psi._basis_functions, spatial_diff=sd, array_factory=array_factory
+        params,
+        xp,
+        psi._basis_functions,
+        spatial_diff=sd,
+        array_factory=array_factory,
     )
 
     # Load initial conditions
@@ -208,13 +216,17 @@ def main():
             # Calculate kinetic energy
             state.ke_counter += params.ke_cadence
             ke_tracker.append(state.t, calc_kinetic_energy(ux, uz, xp, params))
-            nusselt_tracker.append(state.t, calc_nusselt_number(tmp, uz, xp, params))
+            nusselt_tracker.append(
+                state.t, calc_nusselt_number(tmp, uz, xp, params)
+            )
 
             # Calculate remaining time in simulation
             timer.split()
             wallclock_per_timestep = timer.diff / params.ke_cadence
             wallclock_remaining = (
-                wallclock_per_timestep * (params.final_time - state.t) / state.dt
+                wallclock_per_timestep
+                * (params.final_time - state.t)
+                / state.dt
             )
 
         if state.cfl_counter < state.loop_counter:

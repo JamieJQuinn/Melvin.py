@@ -24,13 +24,19 @@ class Integrator:
         return (
             self._dt
             / 24
-            * (9 * dvar.get() + 19 * dvar.get(-1) - 5 * dvar.get(-2) + dvar.get(-3))
+            * (
+                9 * dvar.get()
+                + 19 * dvar.get(-1)
+                - 5 * dvar.get(-2)
+                + dvar.get(-3)
+            )
         )
 
     def set_dt(self, ux, uz):
         """Sets dt based on CFL limit"""
         cfl_dt = min(
-            self._dx / self._xp.max(ux.getp()), self._dz / self._xp.max(uz.getp())
+            self._dx / self._xp.max(ux.getp()),
+            self._dz / self._xp.max(uz.getp()),
         )
         if self._dt > cfl_dt or np.isnan(cfl_dt):
             print("CFL condition breached")

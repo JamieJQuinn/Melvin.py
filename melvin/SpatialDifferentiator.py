@@ -1,7 +1,4 @@
-import numpy as np
 from melvin.BasisFunctions import (
-    BasisFunctions,
-    calc_diff_wavelength,
     gen_diff_factors,
     gen_diff2_factors,
 )
@@ -111,7 +108,9 @@ class SpatialDifferentiator:
 
         dz = self._params.dz
 
-        out[:, 1:-1] = (var[:, 2:] - 2 * var[:, 1:-1] + var[:, :-2]) / (dz ** 2)
+        out[:, 1:-1] = (var[:, 2:] - 2 * var[:, 1:-1] + var[:, :-2]) / (
+            dz ** 2
+        )
 
         return out
 

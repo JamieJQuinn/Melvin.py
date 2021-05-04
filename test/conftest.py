@@ -1,12 +1,23 @@
 import pytest
 import numpy as np
 
-from melvin import Parameters, SpectralTransformer, SpatialDifferentiator, ArrayFactory
+from melvin import (
+    Parameters,
+    SpectralTransformer,
+    SpatialDifferentiator,
+    ArrayFactory,
+)
 
 
 @pytest.fixture
 def parameters():
-    PARAMS = {"nx": 4 ** 4, "nz": 2 ** 8, "lx": 1.0, "lz": 1.0, "final_time": 1.0}
+    PARAMS = {
+        "nx": 4 ** 4,
+        "nz": 2 ** 8,
+        "lx": 1.0,
+        "lz": 1.0,
+        "final_time": 1.0,
+    }
     return Parameters(PARAMS, validate=False)
 
 

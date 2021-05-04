@@ -16,7 +16,9 @@ for f in filenames:
     if ke.dtype == "complex128":
         ke = np.imag(ke)
     cumsum_vec = np.cumsum(np.insert(ke, 0, 0))
-    ke_smooth = (cumsum_vec[window_width:] - cumsum_vec[:-window_width]) / window_width
+    ke_smooth = (
+        cumsum_vec[window_width:] - cumsum_vec[:-window_width]
+    ) / window_width
     plt.plot(t[: -window_width + 1], ke_smooth, label=f)
     max_t = max(max_t, t[-1])
 

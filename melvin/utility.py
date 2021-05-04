@@ -7,13 +7,6 @@ def sech(x):
     return 1.0 / np.cosh(x)
 
 
-def set_numpy_module(PARAMS):
-    if PARAMS["cuda_enabled"]:
-        return cupy
-    else:
-        return numpy
-
-
 def load_scipy_sparse(xp):
     if xp.__name__ == "numpy":
         return scipy.sparse

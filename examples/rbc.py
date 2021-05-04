@@ -173,7 +173,11 @@ def main():
 
     # Laplacian solver depends on psi for its basis calculation
     laplacian_solver = LaplacianSolver(
-        params, xp, psi._basis_functions, spatial_diff=sd, array_factory=array_factory
+        params,
+        xp,
+        psi._basis_functions,
+        spatial_diff=sd,
+        array_factory=array_factory,
     )
 
     # Load initial conditions
@@ -219,7 +223,9 @@ def main():
             timer.split()
             wallclock_per_timestep = timer.diff / params.ke_cadence
             wallclock_remaining = (
-                wallclock_per_timestep * (params.final_time - state.t) / state.dt
+                wallclock_per_timestep
+                * (params.final_time - state.t)
+                / state.dt
             )
 
         if state.cfl_counter < state.loop_counter:
@@ -256,7 +262,8 @@ def main():
 
         diffusion_term = params.Pr * w.snabla2()
         dw[:] = (
-            -w.vec_dot_nabla(ux.getp(), uz.getp()) - params.Pr * params.Ra * tmp.sddx()
+            -w.vec_dot_nabla(ux.getp(), uz.getp())
+            - params.Pr * params.Ra * tmp.sddx()
         )
         integrator.integrate(w, dw, diffusion_term)
 

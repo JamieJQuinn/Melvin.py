@@ -34,7 +34,10 @@ class SpectralTransformer:
         self,
         in_arr,
         out=None,
-        basis_functions=[BasisFunctions.COMPLEX_EXP, BasisFunctions.COMPLEX_EXP],
+        basis_functions=[
+            BasisFunctions.COMPLEX_EXP,
+            BasisFunctions.COMPLEX_EXP,
+        ],
     ):
         p = self._p
         if out is None:
@@ -61,7 +64,10 @@ class SpectralTransformer:
         self,
         in_arr,
         out=None,
-        basis_functions=[BasisFunctions.COMPLEX_EXP, BasisFunctions.COMPLEX_EXP],
+        basis_functions=[
+            BasisFunctions.COMPLEX_EXP,
+            BasisFunctions.COMPLEX_EXP,
+        ],
     ):
         p = self._p
         if out is None:
@@ -85,7 +91,10 @@ class SpectralTransformer:
         self,
         in_arr,
         out=None,
-        basis_functions=[BasisFunctions.COMPLEX_EXP, BasisFunctions.COMPLEX_EXP],
+        basis_functions=[
+            BasisFunctions.COMPLEX_EXP,
+            BasisFunctions.COMPLEX_EXP,
+        ],
     ):
         p = self._p
         if out is None:
@@ -115,7 +124,9 @@ class SpectralTransformer:
         if basis_functions[1] is BasisFunctions.COSINE:
             in_arr[:, 0] *= 2
 
-        upscaled = self._array_factory.make_spectral(upscale_size[0], upscale_size[1])
+        upscaled = self._array_factory.make_spectral(
+            upscale_size[0], upscale_size[1]
+        )
         self._scale(in_arr, upscaled)
         upscaled *= x_factor * z_factor
         fft_result = self._xp.fft.irfft2(upscaled)
@@ -130,7 +141,9 @@ class SpectralTransformer:
             basis_functions[1] is BasisFunctions.COSINE
             or basis_functions[1] is BasisFunctions.SINE
         ):
-            fft_result = fft_result[:, : p.nz]  # mirror signal around end point
+            fft_result = fft_result[
+                :, : p.nz
+            ]  # mirror signal around end point
 
         out[:] = fft_result
 
@@ -140,7 +153,10 @@ class SpectralTransformer:
         self,
         in_arr,
         out=None,
-        basis_functions=[BasisFunctions.COMPLEX_EXP, BasisFunctions.COMPLEX_EXP],
+        basis_functions=[
+            BasisFunctions.COMPLEX_EXP,
+            BasisFunctions.COMPLEX_EXP,
+        ],
     ):
         p = self._p
         if out is None:
@@ -162,7 +178,9 @@ class SpectralTransformer:
             x_factor = -1j * (p.nx - 1)
 
         if basis_functions[1] is BasisFunctions.COSINE:
-            new_arr = self._xp.concatenate((new_arr[:, :-1], new_arr[:, :0:-1]), axis=1)
+            new_arr = self._xp.concatenate(
+                (new_arr[:, :-1], new_arr[:, :0:-1]), axis=1
+            )
             z_factor = p.nz - 1
         elif basis_functions[1] is BasisFunctions.SINE:
             new_arr = self._xp.concatenate(

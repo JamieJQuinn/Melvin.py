@@ -33,7 +33,10 @@ def test_transform_periodic(arrays, st, periodic_coordinates):
     st.to_spectral(
         true_physical,
         spectral,
-        basis_functions=[BasisFunctions.COMPLEX_EXP, BasisFunctions.COMPLEX_EXP],
+        basis_functions=[
+            BasisFunctions.COMPLEX_EXP,
+            BasisFunctions.COMPLEX_EXP,
+        ],
     )
 
     true_spectral = np.zeros_like(spectral)
@@ -50,7 +53,10 @@ def test_transform_periodic(arrays, st, periodic_coordinates):
     st.to_physical(
         spectral,
         physical,
-        basis_functions=[BasisFunctions.COMPLEX_EXP, BasisFunctions.COMPLEX_EXP],
+        basis_functions=[
+            BasisFunctions.COMPLEX_EXP,
+            BasisFunctions.COMPLEX_EXP,
+        ],
     )
     assert_array_almost_equal(physical, true_physical)
 
@@ -189,7 +195,9 @@ def test_transform_sine_both(arrays, st, parameters):
     assert_array_almost_equal(spectral, true_spectral)
 
     st.to_physical(
-        spectral, physical, basis_functions=[BasisFunctions.SINE, BasisFunctions.SINE]
+        spectral,
+        physical,
+        basis_functions=[BasisFunctions.SINE, BasisFunctions.SINE],
     )
     assert_array_almost_equal(physical, true_physical)
 
@@ -253,7 +261,9 @@ def test_transform_sine_x_cosine_z(arrays, st, parameters):
     assert_array_almost_equal(spectral, true_spectral)
 
     st.to_physical(
-        spectral, physical, basis_functions=[BasisFunctions.SINE, BasisFunctions.COSINE]
+        spectral,
+        physical,
+        basis_functions=[BasisFunctions.SINE, BasisFunctions.COSINE],
     )
 
     assert_array_almost_equal(physical, true_physical)
@@ -292,7 +302,9 @@ def test_transform_cosine_x_sine_z(arrays, st, parameters):
     assert_array_almost_equal(spectral, true_spectral)
 
     st.to_physical(
-        spectral, physical, basis_functions=[BasisFunctions.COSINE, BasisFunctions.SINE]
+        spectral,
+        physical,
+        basis_functions=[BasisFunctions.COSINE, BasisFunctions.SINE],
     )
 
     assert_array_almost_equal(physical, true_physical)
@@ -310,7 +322,9 @@ def test_transform_periodic_x_fdm_z(fdm_parameters):
     z = np.linspace(0, 1.0, p.nz)
     X, Z = np.meshgrid(x, z, indexing="ij")
 
-    true_physical = 3.0 + np.cos(2 * np.pi * X) + 2.0 * np.cos(2 * 2 * np.pi * X)
+    true_physical = (
+        3.0 + np.cos(2 * np.pi * X) + 2.0 * np.cos(2 * 2 * np.pi * X)
+    )
 
     st.to_spectral(
         true_physical,
