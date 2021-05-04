@@ -1,7 +1,9 @@
 import time
 
+
 class Timer:
     """Keeps track of current runtime"""
+
     _start_time = 0.0
     diff = 0.0
 

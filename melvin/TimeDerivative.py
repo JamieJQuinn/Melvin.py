@@ -1,16 +1,23 @@
 from melvin.Variable import scale_variable
 
+
 class TimeDerivative:
     """
     Represents a sequence of derivatives in time
     """
+
     def __init__(self, params, xp, array_factory=None):
         self._params = params
         self._xp = xp
         self._curr_idx = 0
         self._data = xp.zeros(
-            (params.integrator_order, params.spectral_shape[0], params.spectral_shape[1]),
-            dtype=params.complex)
+            (
+                params.integrator_order,
+                params.spectral_shape[0],
+                params.spectral_shape[1],
+            ),
+            dtype=params.complex,
+        )
 
     def __setitem__(self, index, value):
         self._data[self._curr_idx, index] = value
@@ -25,16 +32,16 @@ class TimeDerivative:
         self._curr_idx = curr_idx
 
     def advance(self):
-        self._curr_idx = (self._curr_idx + 1)%self._params.integrator_order
+        self._curr_idx = (self._curr_idx + 1) % self._params.integrator_order
 
     def get(self, idx=0):
-        return self._data[self._curr_idx+idx]
+        return self._data[self._curr_idx + idx]
 
     def get_all(self):
         return self._data
 
     def set(self, data, idx=0):
-        self._data[self._curr_idx+idx] = data
+        self._data[self._curr_idx + idx] = data
 
     def load(self, data):
         if isinstance(data, str):

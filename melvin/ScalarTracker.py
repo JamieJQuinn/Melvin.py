@@ -1,5 +1,6 @@
 import numpy as np
 
+
 class ScalarTracker:
     """Tracks a scalar through time"""
 
@@ -21,7 +22,7 @@ class ScalarTracker:
         self._xp.savez(self._filename, t=t, values=vals)
 
     # def load(self):
-        # """Loads from file"""
-        # data = self._xp.load(self._filename)
-        # self._times = data['t'].to_arr()
-        # self._values = data['values'].to_arr()
+    # """Loads from file"""
+    # data = self._xp.load(self._filename)
+    # self._times = data['t'].to_arr()
+    # self._values = data['values'].to_arr()

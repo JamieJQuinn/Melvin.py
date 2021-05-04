@@ -5,6 +5,7 @@ try:
 except ModuleNotFoundError:
     pass
 
+
 class DataTransferer:
     def __init__(self, xp):
         if xp.__name__ == "numpy":

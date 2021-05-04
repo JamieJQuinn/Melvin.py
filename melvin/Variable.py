@@ -1,12 +1,27 @@
 import numpy as np
-from melvin.BasisFunctions import BasisFunctions, is_fully_spectral, calc_diff_wavelength
+from melvin.BasisFunctions import (
+    BasisFunctions,
+    is_fully_spectral,
+    calc_diff_wavelength,
+)
+
 
 class Variable:
     """
     Encapsulates the physical and spectral representations of a variable
     """
-    def __init__(self, params, xp, sd=None, st=None, dt=None, array_factory=None, dump_name=None,\
-                 basis_functions=[BasisFunctions.COMPLEX_EXP, BasisFunctions.COMPLEX_EXP]):
+
+    def __init__(
+        self,
+        params,
+        xp,
+        sd=None,
+        st=None,
+        dt=None,
+        array_factory=None,
+        dump_name=None,
+        basis_functions=[BasisFunctions.COMPLEX_EXP, BasisFunctions.COMPLEX_EXP],
+    ):
         self._params = params
         self._xp = xp
         self._st = st
@@ -30,11 +45,11 @@ class Variable:
 
     def sets(self, data):
         """Setter for spectral data"""
-        self._sdata[:,:] = data[:,:]
+        self._sdata[:, :] = data[:, :]
 
     def setp(self, data):
         """Setter for physical data"""
-        self._pdata[:,:] = data[:,:]
+        self._pdata[:, :] = data[:, :]
 
     def getp(self):
         return self._pdata
@@ -108,11 +123,11 @@ class Variable:
 
         if convert_to_physical:
             self.to_physical()
-        out[:] = self._sd.pddx(ux*self.getp()) + self._sd.pddz(uz*self.getp())
+        out[:] = self._sd.pddx(ux * self.getp()) + self._sd.pddz(uz * self.getp())
         return self._st.to_spectral(out, basis_functions=self._basis_functions)
 
     def save(self):
-        fname = self._dump_name + f'{self._dump_counter:04d}.npy'
+        fname = self._dump_name + f"{self._dump_counter:04d}.npy"
         self._dump_counter += 1
 
         self._xp.save(fname, self._pdata)
@@ -124,10 +139,10 @@ class Variable:
 def scale_variable(var, outsize, xp):
     # Scales array in spectral space from insize to outsize
     insize = var.shape
-    outvar = xp.zeros((2*outsize[0]+1, outsize[1]))
+    outvar = xp.zeros((2 * outsize[0] + 1, outsize[1]))
     nx_min = min(insize[0], outsize[0])
     nz_min = min(insize[1], outsize[1])
-    outvar[:nx_min+1, :nz_min] = var[:nx_min+1, :nz_min]
+    outvar[: nx_min + 1, :nz_min] = var[: nx_min + 1, :nz_min]
     outvar[-nx_min:, :nz_min] = var[-nx_min:, :nz_min]
 
     return outvar

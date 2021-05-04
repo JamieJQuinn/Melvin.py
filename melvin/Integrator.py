@@ -1,26 +1,42 @@
 import numpy as np
 
+
 class Integrator:
     def _adams_bashforth_2(self, dvar):
-        return self._dt/2*(3*dvar.get() - dvar.get(-1))
+        return self._dt / 2 * (3 * dvar.get() - dvar.get(-1))
 
     def _adams_bashforth_4(self, dvar):
-        return self._dt/24*(55*dvar.get() - 59*dvar.get(-1) + 37*dvar.get(-2) - 9*dvar.get(-3))
+        return (
+            self._dt
+            / 24
+            * (
+                55 * dvar.get()
+                - 59 * dvar.get(-1)
+                + 37 * dvar.get(-2)
+                - 9 * dvar.get(-3)
+            )
+        )
 
     def _adams_moulton_2(self, dvar):
-        return self._dt/2*(dvar.get() + dvar.get(-1))
+        return self._dt / 2 * (dvar.get() + dvar.get(-1))
 
     def _adams_moulton_4(self, dvar):
-        return self._dt/24*(9*dvar.get() +19*dvar.get(-1) -5*dvar.get(-2) + dvar.get(-3))
+        return (
+            self._dt
+            / 24
+            * (9 * dvar.get() + 19 * dvar.get(-1) - 5 * dvar.get(-2) + dvar.get(-3))
+        )
 
     def set_dt(self, ux, uz):
         """Sets dt based on CFL limit"""
-        cfl_dt = min(self._dx/self._xp.max(ux.getp()), self._dz/self._xp.max(uz.getp()))
+        cfl_dt = min(
+            self._dx / self._xp.max(ux.getp()), self._dz / self._xp.max(uz.getp())
+        )
         if self._dt > cfl_dt or np.isnan(cfl_dt):
             print("CFL condition breached")
             return
-        while self._dt > self._cfl_cutoff*cfl_dt:
-            self._dt = self._dt*0.9
+        while self._dt > self._cfl_cutoff * cfl_dt:
+            self._dt = self._dt * 0.9
         return self._dt
 
     def override_dt(self, dt):
@@ -38,8 +54,8 @@ class Integrator:
     def _semi_implicit_spectral(self, var, dvar, lin_op):
         alpha = self._alpha
         dt = self._dt
-        RHS = (1+(1-alpha)*dt*lin_op)*var[:] + self.predictor(dvar)
-        var[:] = RHS/(1-alpha*dt*lin_op)
+        RHS = (1 + (1 - alpha) * dt * lin_op) * var[:] + self.predictor(dvar)
+        var[:] = RHS / (1 - alpha * dt * lin_op)
         dvar.advance()
 
     def __init__(self, params, xp):
