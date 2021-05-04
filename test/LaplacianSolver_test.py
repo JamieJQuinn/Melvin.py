@@ -2,10 +2,8 @@ import numpy as np
 import pytest
 from numpy.testing import assert_array_almost_equal
 
-from Variable import Variable
-from LaplacianSolver import LaplacianSolver
-from ArrayFactory import ArrayFactory
-from utility import load_scipy_sparse
+from melvin import Variable, LaplacianSolver, ArrayFactory
+from melvin.utility import load_scipy_sparse
 
 def test_fdm_laplacian_solver(fdm_parameters):
     p = fdm_parameters

@@ -3,9 +3,7 @@ import pytest
 from pytest import approx
 from numpy.testing import assert_array_almost_equal
 
-from BasisFunctions import BasisFunctions
-from ArrayFactory import ArrayFactory
-from SpectralTransformer import SpectralTransformer
+from melvin import BasisFunctions, ArrayFactory, SpectralTransformer
 
 @pytest.fixture
 def periodic_coordinates(parameters):

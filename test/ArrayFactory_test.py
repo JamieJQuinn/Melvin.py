@@ -1,7 +1,7 @@
 import pytest
 import numpy as np
 
-from ArrayFactory import ArrayFactory
+from melvin import ArrayFactory
 
 def test_fully_spectral_array_production(parameters):
     array_factory = ArrayFactory(parameters, np)

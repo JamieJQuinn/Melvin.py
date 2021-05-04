@@ -2,12 +2,9 @@ import numpy as np
 import pytest
 import time
 from numpy.testing import assert_array_almost_equal
-
 from pytest import approx
-from Variable import Variable
-from SpatialDifferentiator import SpatialDifferentiator
-from ArrayFactory import ArrayFactory
-from SpectralTransformer import SpectralTransformer
+
+from melvin import Variable, SpatialDifferentiator, ArrayFactory, SpectralTransformer
 
 def test_spatial_derivatives(parameters, st, sd, array_factory):
     p = parameters

@@ -1,10 +1,7 @@
 import pytest
 import numpy as np
 
-from Parameters import Parameters
-from SpectralTransformer import SpectralTransformer
-from SpatialDifferentiator import SpatialDifferentiator
-from ArrayFactory import ArrayFactory
+from melvin import Parameters, SpectralTransformer, SpatialDifferentiator, ArrayFactory
 
 @pytest.fixture
 def parameters():
