@@ -11,6 +11,7 @@ def test_fully_spectral_array_production(parameters):
     physical = array_factory.make_physical()
 
     assert spectral.shape == (2 * parameters.nn + 1, parameters.nm)
+    assert physical.shape == (parameters.nx, parameters.nz)
 
 
 def test_fdm_array_production(fdm_parameters):
