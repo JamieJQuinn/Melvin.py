@@ -1,4 +1,4 @@
-name: Testing and linting
+name: Testing and Linting
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
           architecture: x64
 
       - name: Install Melvin and dependencies
-        run: pip install .
+        run: pip install . pytest black flake8
 
       - name: Check formatting with black
         run: black --check .
