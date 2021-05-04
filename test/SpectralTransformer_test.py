@@ -332,37 +332,3 @@ def test_transform_periodic_x_fdm_z(fdm_parameters):
     )
 
     assert_array_almost_equal(physical, true_physical)
-
-
-def test_transform_chebyshev_both(arrays, st, parameters):
-    spectral, physical = arrays
-
-    p = parameters
-    x = np.linspace(0, 1.0, p.nx, endpoint=True)
-    z = np.linspace(0, 1.0, p.nz, endpoint=True)
-
-    theta = np.cos(np.pi * x)
-    X, Z = np.meshgrid(theta, z, indexing="ij")
-
-    true_physical = (
-        np.cos(np.pi * X) * np.sin(np.pi * Z)
-        + 2.0 * np.cos(3 * np.pi * X) * np.sin(2 * np.pi * Z)
-        + 3.0 * np.sin(2 * np.pi * Z)
-    )
-
-    # st.to_spectral(true_physical, spectral, basis_functions=[BasisFunctions.CHEBYSHEV, BasisFunctions.SINE])
-
-    # true_spectral = np.zeros_like(spectral)
-    # true_spectral[1,1] = 1.0
-    # true_spectral[-1,1] = 1.0 # x is cosine, complex conjugate is the same
-
-    # true_spectral[0,2] = 3.0
-
-    # true_spectral[3,2] = 2.0
-    # true_spectral[-3,2] = 2.0
-
-    # assert_array_almost_equal(spectral, true_spectral)
-
-    # st.to_physical(spectral, physical, basis_functions=[BasisFunctions.CHEBYSHEV, BasisFunctions.CHEBYSHEV])
-
-    # assert_array_almost_equal(physical, true_physical)
