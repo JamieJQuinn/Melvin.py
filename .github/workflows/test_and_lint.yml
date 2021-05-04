@@ -1,4 +1,4 @@
-name: Pytest
+name: Testing and linting
 
 on:
   push:
@@ -28,5 +28,12 @@ jobs:
       - name: Install Melvin and dependencies
         run: pip install .
 
-      - name: Test
+      - name: Check formatting with black
+        run: black --check .
+
+      - name: Check style with flake8
+        run: flake8
+
+      - name: Test with pytest
         run: pytest
+
