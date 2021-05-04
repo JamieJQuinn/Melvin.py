@@ -1,4 +1,3 @@
-import matplotlib.pyplot as plt
 import numpy as np
 from melvin.BasisFunctions import BasisFunctions, is_fully_spectral, calc_diff_wavelength
 
@@ -121,10 +120,6 @@ class Variable:
     def on_host(self):
         return self._dt.to_host(self.gets())
 
-    def plot(self):
-        physical_host = self._dt.to_host(self._pdata)
-        plt.imshow(physical_host.T)
-        plt.show()
 
 def scale_variable(var, outsize, xp):
     # Scales array in spectral space from insize to outsize
