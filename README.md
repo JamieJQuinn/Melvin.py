@@ -29,8 +29,8 @@
   <a href="https://github.com/JamieJQuinn/Melvin.py/releases">
     <img alt="GitHub tag (latest SemVer pre-release)" src="https://img.shields.io/github/v/tag/jamiejquinn/melvin.py?include_prereleases&label=latest%20version&logo=github&sort=semver&style=flat-square">
   </a>
-    <a href="https://github.com/JamieJQuinn/Melvin.py/actions/workflows/pytest.yml">
-    <img alt="Continuous testing" src="https://github.com/jamiejquinn/melvin.py/actions/workflows/pytest.yml/badge.svg">
+    <a href="https://github.com/JamieJQuinn/Melvin.py/actions/workflows/test_and_lint.yml">
+    <img alt="Continuous testing" src="https://github.com/jamiejquinn/melvin.py/actions/workflows/test_and_lint.yml/badge.svg">
   </a>
   <!--<a href="https://clima.github.io/OceananigansDocumentation/stable">-->
     <!--<img alt="Stable documentation" src="https://img.shields.io/badge/documentation-stable%20release-blue?style=flat-square">-->
