@@ -69,10 +69,18 @@ Melvin.py is a user-friendly framework for building GPU-accelerated spectral sim
 
 ## Installation instructions
 
-You can install the latest version of Melvin using the Python package manager `pip`
+You can install the latest version of Melvin by cloning this repo and installing via pip:
 
 ```bash
-pip install melvin
+git clone https://github.com/JamieJQuinn/Melvin.py.git
+cd Melvin.py
+pip install .
+```
+
+To install with GPU support (provided via [CuPy](https://cupy.dev/)) replace the above `pip install` with
+
+```
+pip install .[cupy]
 ```
 
 **Note**: Melvin is tested with Python 3.9. Older versions of Python 3 may work but YMMV.
