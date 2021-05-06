@@ -2,11 +2,9 @@
 
 Thank you for considering contributing to Melvin.py! 
 
-Please feel free to ask us questions and chat with us at any time if you're unsure about anything.
+Please feel free to ask me questions and get in touch at any time if you're unsure about anything.
 
 Best way to get in touch is to either just open a GitHub issue (don't be shy!) or to drop me an email (jamiejquinn [at ] jamiejquinn.com).
-
-We follow the [ColPrac guide](https://github.com/SciML/ColPrac) for collaborative practices. New contributors should make sure to read that guide.
 
 ## What can I do?
 
