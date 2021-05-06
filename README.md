@@ -70,15 +70,13 @@ Melvin.py is a user-friendly framework for building GPU-accelerated spectral sim
 ## Installation instructions
 
 You can install the latest version of Melvin by cloning this repo and installing via pip:
-
 ```bash
 git clone https://github.com/JamieJQuinn/Melvin.py.git
 cd Melvin.py
 pip install .
 ```
 
-To install with GPU support (provided via [CuPy](https://cupy.dev/)) replace the above `pip install` with
-
+To install with GPU support (provided via [CuPy](https://cupy.dev/)) replace the above `pip install .` with
 ```
 pip install .[cupy]
 ```
@@ -94,7 +92,6 @@ The examples can be found in the `examples` folder and provide a useful starting
 - Double-diffusive convection (with formation of thermohaline staircases)
 
 Let us run the double-diffusive convection example, `ddc.py` and place output files into a data directory. The parameters, initial conditions and boundary conditions are all set within `ddc.py` file and can be run with
-
 ```bash
 mkdir data
 cd data
