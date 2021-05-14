@@ -30,7 +30,7 @@ class Variable:
         self._dump_counter = 0
 
         if basis_functions is None:
-            raise Error("Basis functions must be specified.")
+            raise Exception("Basis functions must be specified.")
 
         self._basis_functions = basis_functions
 
