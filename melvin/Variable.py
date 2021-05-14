@@ -137,6 +137,9 @@ class Variable:
     def on_host(self):
         return self._dt.to_host(self.gets())
 
+    def get_name(self):
+        return self._dump_name
+
 
 def scale_variable(var, outsize, xp):
     # Scales array in spectral space from insize to outsize

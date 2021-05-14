@@ -3,6 +3,8 @@ from numpy.random import default_rng
 import scipy.sparse
 import scipy.sparse.linalg
 
+from melvin import BasisFunctions
+
 
 def sech(x):
     return 1.0 / np.cosh(x)
@@ -54,3 +56,22 @@ def calc_kinetic_energy(ux, uz, xp, params):
     total_ke = 0.5 * xp.sum(ke) / (nx * nz)
     return total_ke
 
+
+def calc_velocity_from_vorticity(
+    vorticity, streamfunction, ux, uz, laplacian_solver
+):
+    laplacian_solver.solve(-vorticity.gets(), out=streamfunction._sdata)
+
+    if streamfunction._basis_functions[1] is BasisFunctions.FDM:
+        streamfunction.to_physical()
+        ux.setp(-streamfunction.pddz())
+    else:
+        ux[:] = -streamfunction.sddz()
+        ux.to_physical()
+
+    if streamfunction._basis_functions[0] is BasisFunctions.FDM:
+        streamfunction.to_physical()
+        uz.setp(streamfunction.pddx())
+    else:
+        uz[:] = streamfunction.sddx()
+        uz.to_physical()

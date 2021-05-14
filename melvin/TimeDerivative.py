@@ -6,7 +6,7 @@ class TimeDerivative:
     Represents a sequence of derivatives in time
     """
 
-    def __init__(self, params, xp, array_factory=None):
+    def __init__(self, params, xp, dump_name="", array_factory=None):
         self._params = params
         self._xp = xp
         self._curr_idx = 0
@@ -18,6 +18,7 @@ class TimeDerivative:
             ),
             dtype=params.complex,
         )
+        self._dump_name = dump_name
 
     def __setitem__(self, index, value):
         self._data[self._curr_idx, index] = value
@@ -55,8 +56,10 @@ class TimeDerivative:
     def __load_from_array(self, data):
         # Assume data already on host
         nn, nm = self._params.nn, self._params.nm
-        print(data.shape)
         for i in range(self._params.integrator_order):
             if data[i].shape != (nn, nm):
                 data[i] = scale_variable(data[i], (nn, nm), self._xp)
             self._data[i] = data[i]
+
+    def get_name(self):
+        return self._dump_name
