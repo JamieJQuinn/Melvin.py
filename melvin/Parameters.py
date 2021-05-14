@@ -17,9 +17,7 @@ class Parameters:
     load_from = None
 
     discretisation = ["spectral", "spectral"]
-
-    complex = np.complex128
-    float = np.float64
+    precision = "double"
 
     # Required parameters
     nx = None
@@ -77,6 +75,13 @@ class Parameters:
 
         self.dx = self.lx / self.nx
         self.dz = self.lz / self.nz
+
+        if self.precision == "double":
+            self.complex = np.complex128
+            self.float = np.float64
+        elif self.precision == "float":
+            self.complex = np.complex64
+            self.float = np.float32
 
         if "initial_dt" not in params:
             self.initial_dt = 0.2 * min(self.dx, self.dz)

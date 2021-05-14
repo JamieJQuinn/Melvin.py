@@ -47,13 +47,6 @@ def load_initial_conditions(params, w, tmp, xi):
     xi.load(xi0_p, is_physical=True)
 
 
-def calc_kinetic_energy(ux, uz, xp, params):
-    nx, nz = params.nx, params.nz
-    ke = uz.getp() ** 2 + ux.getp() ** 2
-    total_ke = 0.5 * xp.sum(ke) / (nx * nz)
-    return total_ke
-
-
 def calc_nusselt_number(tmp, uz, xp, params):
     # From Stellmach et al 2011 (DOI: 10.1017/jfm.2011.99)
     flux = xp.mean(tmp.getp() * uz.getp())
@@ -112,6 +105,7 @@ def main():
         "save_cadence": 1,
         # "load_from": 49,
         "dump_cadence": 10,
+        "precision": "float",
     }
     params = Parameters(PARAMS)
     state = RunningState(params)
