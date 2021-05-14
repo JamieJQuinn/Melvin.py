@@ -1,93 +1,34 @@
 #!/usr/bin/env python3
 
+from functools import partial
 import numpy as np
-from numpy.random import default_rng
 
 import cupy
 import time
 import matplotlib.pyplot as plt
 
-from melvin import (
-    Parameters,
-    SpectralTransformer,
-    DataTransferer,
-    Variable,
-    TimeDerivative,
-    SpatialDifferentiator,
-    Integrator,
-    Timer,
-    ScalarTracker,
-    RunningState,
-    ArrayFactory,
-    LaplacianSolver,
-    BasisFunctions,
+from melvin import Parameters, Simulation, BasisFunctions
+
+from melvin.utility import (
+    calc_kinetic_energy,
+    calc_velocity_from_vorticity,
+    init_var_with_noise,
 )
 
 xp = cupy
 
 
 def load_initial_conditions(params, w, tmp):
-    x = np.linspace(0, params.lx, params.nx, endpoint=False)
-    z = np.linspace(0, params.lz, params.nz, endpoint=True)
-    X, Z = np.meshgrid(x, z, indexing="ij")
-
-    rng = default_rng(0)
-
-    epsilon = 1e-1
-
-    w0_p = np.zeros_like(X)
-    tmp0_p = np.zeros_like(X) + 0.5
-    # tmp0_p = 1-Z
-
-    w0_p += epsilon * (2 * rng.random((params.nx, params.nz)) - 1.0)
-    tmp0_p += epsilon * (2 * rng.random((params.nx, params.nz)) - 1.0)
-    # tmp0_p += epsilon*np.sin(np.pi*Z)*np.cos(2*np.pi*X)
-
-    w.load(w0_p, is_physical=True)
-    tmp.load(tmp0_p, is_physical=True)
-
-
-def calc_kinetic_energy(ux, uz, xp, params):
-    nx, nz = params.nx, params.nz
-    ke = uz.getp() ** 2 + ux.getp() ** 2
-    total_ke = 0.5 * xp.sum(ke) / (nx * nz)
-    return total_ke
-
-
-def form_dumpname(index):
-    return f"dump{index:04d}.npz"
-
-
-def dump(index, xp, data_trans, w, dw, tmp, dtmp):
-    fname = form_dumpname(index)
-    np.savez(
-        fname,
-        w=data_trans.to_host(w[:]),
-        dw=data_trans.to_host(dw.get_all()),
-        tmp=data_trans.to_host(tmp[:]),
-        dtmp=data_trans.to_host(dtmp.get_all()),
-        curr_idx=dw.get_curr_idx(),
-    )
-
-
-def load(index, xp, w, dw, tmp, dtmp):
-    fname = form_dumpname(index)
-    dump_arrays = xp.load(fname)
-    w.load(dump_arrays["w"])
-    dw.load(dump_arrays["dw"])
-    tmp.load(dump_arrays["tmp"])
-    dtmp.load(dump_arrays["dtmp"])
-
-    # This assumes all variables are integrated together
-    dw.set_curr_idx(dump_arrays["curr_idx"])
-    dtmp.set_curr_idx(dump_arrays["curr_idx"])
+    epsilon = 1e-2
+    init_var_with_noise(w, epsilon)
+    init_var_with_noise(tmp, epsilon)
 
 
 def main():
     PARAMS = {
-        "nx": 2 ** 6,
+        "nx": 2 ** 7,
         "nz": 2 ** 6,
-        "lx": 2.0,
+        "lx": 16.0 / 9,
         "lz": 1.0,
         "initial_dt": 1e-5,
         "cfl_cutoff": 0.5,
@@ -98,149 +39,69 @@ def main():
         "integrator_order": 2,
         "integrator": "explicit",
         "save_cadence": 5e-5,
-        # "load_from": 49,
         "dump_cadence": 1e-1,
         "discretisation": ["spectral", "fdm"],
+        "precision": "float",
     }
     params = Parameters(PARAMS)
-    state = RunningState(params)
+    params.save()
 
-    data_trans = DataTransferer(xp)
-    array_factory = ArrayFactory(params, xp)
+    simulation = Simulation(params, xp)
 
-    # Algorithms
-    sd = SpatialDifferentiator(params, xp, array_factory=array_factory)
-    st = SpectralTransformer(params, xp, array_factory)
-    integrator = Integrator(params, xp)
-
-    # Trackers
-    ke_tracker = ScalarTracker(params, xp, "kinetic_energy.npz")
+    basis_fns = [BasisFunctions.COMPLEX_EXP, BasisFunctions.FDM]
 
     # Simulation variables
+    w = simulation.make_variable("w", basis_fns)
+    tmp = simulation.make_variable("tmp", basis_fns)
 
-    bs = [BasisFunctions.COMPLEX_EXP, BasisFunctions.FDM]
+    dw = simulation.make_derivative("dw")
+    dtmp = simulation.make_derivative("dtmp")
 
-    w = Variable(
-        params,
-        xp,
-        sd=sd,
-        st=st,
-        dt=data_trans,
-        array_factory=array_factory,
-        dump_name="w",
-        basis_functions=bs,
-    )
-    dw = TimeDerivative(params, xp)
-    tmp = Variable(
-        params,
-        xp,
-        sd=sd,
-        st=st,
-        dt=data_trans,
-        array_factory=array_factory,
-        dump_name="tmp",
-        basis_functions=bs,
-    )
-    dtmp = TimeDerivative(params, xp)
+    psi = simulation.make_variable("psi", basis_fns)
+    ux = simulation.make_variable("ux", basis_fns)
+    uz = simulation.make_variable("uz", basis_fns)
 
-    psi = Variable(
-        params,
-        xp,
-        sd=sd,
-        st=st,
-        array_factory=array_factory,
-        dump_name="psi",
-        basis_functions=bs,
-    )
-    ux = Variable(
-        params,
-        xp,
-        sd=sd,
-        st=st,
-        array_factory=array_factory,
-        dump_name="ux",
-        basis_functions=bs,
-    )
-    uz = Variable(
-        params,
-        xp,
-        sd=sd,
-        st=st,
-        array_factory=array_factory,
-        dump_name="uz",
-        basis_functions=bs,
-    )
+    simulation.init_laplacian_solver(psi._basis_functions)
 
-    # Laplacian solver depends on psi for its basis calculation
-    laplacian_solver = LaplacianSolver(
-        params,
-        xp,
-        psi._basis_functions,
-        spatial_diff=sd,
-        array_factory=array_factory,
+    simulation.config_dump([w, tmp], [dw, dtmp])
+    simulation.config_save([tmp])
+    simulation.config_cfl(ux, uz)
+    simulation.config_scalar_trackers(
+        {
+            "kinetic_energy.npz": partial(
+                calc_kinetic_energy, ux, uz, xp, params
+            ),
+        }
     )
 
     # Load initial conditions
-
     if params.load_from is not None:
-        load(params.load_from, xp, w, dw, tmp, dtmp)
-        integrator.override_dt(state.dt)
+        simulation.load(params.load_from)
     else:
         load_initial_conditions(params, w, tmp)
 
     total_start = time.time()
-    wallclock_remaining = 0.0
-    timer = Timer()
 
     # Main loop
+    while simulation._t < params.final_time:
+        # SOLVER STARTS HERE
+        calc_velocity_from_vorticity(
+            w, psi, ux, uz, simulation.get_laplacian_solver()
+        )
 
-    while state.t < params.final_time:
-        if state.save_counter <= state.t:
-            state.save_counter += params.save_cadence
-            print(
-                f"{state.t/params.final_time *100:.2f}% complete",
-                f"t = {state.t:.2f}",
-                f"dt = {state.dt:.2e}",
-                f"Remaining: {wallclock_remaining/3600:.2f} hr",
-            )
-            tmp.save()
-            w.save()
-            # ke_tracker.save()
-            # nusselt_tracker.save()
+        diffusion_term = params.Pr * w.snabla2()
+        dw[:] = (
+            -w.vec_dot_nabla(ux.getp(), uz.getp())
+            - params.Pr * params.Ra * tmp.sddx()
+        )
+        simulation._integrator.integrate(w, dw, diffusion_term)
 
-        if state.dump_counter <= state.t:
-            state.dump_counter += params.dump_cadence
-            dump(state.dump_index, xp, data_trans, w, dw, tmp, dtmp)
-            state.save(state.dump_index)
-            state.dump_index += 1
+        diffusion_term = tmp.snabla2()
+        dtmp[:] = -tmp.vec_dot_nabla(ux.getp(), uz.getp())
+        simulation._integrator.integrate(tmp, dtmp, diffusion_term)
 
-        if state.ke_counter < state.loop_counter:
-            # Calculate kinetic energy
-            state.ke_counter += params.ke_cadence
-            ke_tracker.append(state.t, calc_kinetic_energy(ux, uz, xp, params))
-
-            # Calculate remaining time in simulation
-            timer.split()
-            wallclock_per_timestep = timer.diff / params.ke_cadence
-            wallclock_remaining = (
-                wallclock_per_timestep
-                * (params.final_time - state.t)
-                / state.dt
-            )
-
-        if state.cfl_counter < state.loop_counter:
-            # Adapt timestep
-            state.cfl_counter += params.cfl_cadence
-            state.dt = integrator.set_dt(ux, uz)
-            if state.dt is None:
-                return
-
-        # omega boundary conditions
         w[1:, 0] = 0.0
         w[1:, -1] = 0.0
-
-        # SOLVER STARTS HERE
-        laplacian_solver.solve(-w.gets(), out=psi._sdata)
 
         psi[1:, 0] = 0.0
         psi[1:, -1] = 0.0
@@ -254,27 +115,7 @@ def main():
         tmp[1:, 0] = 0.0
         tmp[1:, -1] = 0.0
 
-        psi.to_physical()
-        ux.setp(-psi.pddz())
-
-        uz[:] = psi.sddx()
-        uz.to_physical()
-
-        diffusion_term = params.Pr * w.snabla2()
-        dw[:] = (
-            -w.vec_dot_nabla(ux.getp(), uz.getp())
-            - params.Pr * params.Ra * tmp.sddx()
-        )
-        integrator.integrate(w, dw, diffusion_term)
-
-        diffusion_term = tmp.snabla2()
-        dtmp[:] = -tmp.vec_dot_nabla(ux.getp(), uz.getp())
-        integrator.integrate(tmp, dtmp, diffusion_term)
-
-        tmp.to_physical()
-
-        state.t += state.dt
-        state.loop_counter += 1
+        simulation.end_loop()
 
     total_end = time.time() - total_start
     print(f"Total time: {total_end/3600:.2f} hr")
