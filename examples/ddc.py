@@ -9,7 +9,11 @@ import matplotlib.pyplot as plt
 
 from melvin import Parameters, Simulation
 
-from melvin.utility import calc_kinetic_energy, calc_velocity_from_vorticity, init_var_with_noise
+from melvin.utility import (
+    calc_kinetic_energy,
+    calc_velocity_from_vorticity,
+    init_var_with_noise,
+)
 
 xp = cupy
 
