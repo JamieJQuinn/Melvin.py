@@ -1,23 +1,22 @@
 #!/usr/bin/env python3
 
+from functools import partial
 import numpy as np
 from numpy.random import default_rng
 
 import cupy
 import time
-from melvin.utility import sech
 
-from melvin import (
-    Parameters,
-    SpectralTransformer,
-    DataTransferer,
-    Variable,
-    TimeDerivative,
-    LaplacianSolver,
-    Integrator,
+from melvin import Parameters, Simulation, BasisFunctions
+
+from melvin.utility import (
+    calc_kinetic_energy,
+    calc_velocity_from_vorticity,
+    init_var_with_noise,
+    sech
 )
 
-MODULE = cupy
+xp = cupy
 
 
 def load_initial_conditions(params, w, ink):
@@ -29,9 +28,9 @@ def load_initial_conditions(params, w, ink):
 
     rng = default_rng(0)
 
-    epsilon = 0.1
+    epsilon = 0.01
     # sigma = 0.2
-    h = 0.05
+    h = 0.1
     # pert_n = 1
 
     ## Set vorticity
@@ -47,110 +46,95 @@ def load_initial_conditions(params, w, ink):
 
     w0_p += w0_pert_p
 
-    w.load_ics(w0_p)
+    w.load(w0_p, is_physical=True)
 
     ## Set ink
     # ink0_p = np.array(np.logical_and(Z>0.5, Z<1.5)) + 1
-    ink0_p = np.array(Z > 0.5) + 1
-    ink.load_ics(ink0_p)
+    # ink0_p = np.array(Z > 0.5) + 1
+    ink.load(w0_p, is_physical=True)
 
 
 def main():
     PARAMS = {
-        "nx": 4 ** 6,
-        "nz": 2 ** 11,
+        "nx": 2 ** 11,
+        "nz": 2 ** 10,
         "lx": 16.0 / 9.0,
         "lz": 1.0,
-        "dt": 0.2 / 4 ** 5,
         "Re": 1e5,
         "integrator_order": 2,
         "max_time": 3.0,
-        "dump_cadence": 0.01,
+        "final_time": 10,
+        "save_cadence": 0.003,
+        "precision": "float",
+        "spatial_derivative_order": 2,
+        "integrator_order": 2,
+        "integrator": "semi-implicit",
+        "cfl_cutoff": 0.5,
     }
-    PARAMS["dt"] = 0.1 * PARAMS["lx"] / PARAMS["nx"]
-    dt = DataTransferer(MODULE)
+    PARAMS["initial_dt"] = 0.05 * PARAMS["lx"] / PARAMS["nx"]
     params = Parameters(PARAMS)
-    st = SpectralTransformer(params, MODULE)
-    lap_solver = LaplacianSolver(params, MODULE)
-    integrator = Integrator(params)
+    params.save()
 
-    # Create mode number matrix
-    n = np.concatenate((np.arange(0, params.nn + 1), np.arange(-params.nn, 0)))
-    m = np.arange(0, params.nm)
-    n, m = dt.from_host(np.meshgrid(n, m, indexing="ij"))
+    simulation = Simulation(params, xp)
 
-    w = Variable(params, MODULE, st, dt, dump_name="w")
-    dw = TimeDerivative(params, MODULE)
+    basis_fns = [BasisFunctions.COMPLEX_EXP, BasisFunctions.COMPLEX_EXP]
 
-    ink = Variable(params, MODULE, st, dt, dump_name="ink")
-    # dink = TimeDerivative(params, MODULE)
+    # Simulation variables
+    w = simulation.make_variable("w", basis_fns)
+    ink = simulation.make_variable("ink", basis_fns)
 
-    psi = Variable(params, MODULE, st)
-    ux = Variable(params, MODULE, st)
-    uz = Variable(params, MODULE, st)
+    dw = simulation.make_derivative("dw")
+    dink = simulation.make_derivative("dink")
 
-    load_initial_conditions(params, w, ink)
+    psi = simulation.make_variable("psi", basis_fns)
+    ux = simulation.make_variable("ux", basis_fns)
+    uz = simulation.make_variable("uz", basis_fns)
 
-    t = 0.0
-    print_track = 0.0
+    simulation.init_laplacian_solver(basis_fns)
 
-    total_ke = 0.0
-    max_vel = 0.0
+    simulation.config_dump([w, ink], [dw, dink])
+    simulation.config_save([w])
+    simulation.config_cfl(ux, uz)
+    simulation.config_scalar_trackers(
+        {
+            "kinetic_energy.npz": partial(
+                calc_kinetic_energy, ux, uz, xp, params
+            ),
+        }
+    )
 
-    print("dt=", params.dt)
+    # Load initial conditions
+    if params.load_from is not None:
+        simulation.load(params.load_from)
+    else:
+        load_initial_conditions(params, w, ink)
 
-    start = time.time()
-    while t < params.max_time:
-        if print_track <= t:
-            print_track += params.dump_cadence
-            # w.plot()
-            w.save()
-            print(t, t / params.max_time * 100, total_ke)
-            print(params.dz / params.dt, max_vel)
-        lap_solver.solve(w.gets(), psi.gets())
-        psi._sdata[0, 0] = 0.0
+    total_start = time.time()
 
-        ux[:] = 1j * params.km * m * psi[:]
-        ux.to_physical()
-        uz[:] = -1j * params.kn * n * psi[:]
-        uz.to_physical()
-
-        ke = uz.getp() ** 2 + ux.getp() ** 2
-        max_vel = MODULE.max(MODULE.sqrt(ke))
-        total_ke = 0.5 * MODULE.sum(ke) / (params.nx * params.nz)
-
-        w.to_physical()
-        dw[:] = -w.vec_dot_nabla(ux.getp(), uz.getp())
-        RHS = (
-            1 + (1 - params.alpha) * params.dt / params.Re * lap_solver.lap
-        ) * w[:] + integrator.predictor(dw)
-        w[:] = RHS / (
-            1 - params.alpha * params.dt / params.Re * lap_solver.lap
+    # Main loop
+    while simulation._t < params.final_time:
+        # SOLVER STARTS HERE
+        calc_velocity_from_vorticity(
+            w, psi, ux, uz, simulation.get_laplacian_solver()
         )
-        dw.advance()
 
-        # ink
-        # ink.to_physical()
-        # dink[:] = -ink.vec_dot_nabla(ux.getp(), uz.getp()) + 1.0/params.Re*lap_solver.lap*ink[:]
-        # ink[:] += integrator.predictor(dink)
-        # dink.advance()
+        lin_op = 1.0/params.Re * w.lap()
+        dw[:] = (
+            -w.vec_dot_nabla(ux.getp(), uz.getp())
+        )
+        simulation._integrator.integrate(w, dw, lin_op)
 
-        # Predictor
-        # w.to_physical()
-        # dw[:] = -w.vec_dot_nabla(ux.getp(), uz.getp()) + 1.0/params.Re*lap_solver.lap*w[:]
-        # w[:] += integrator.predictor(dw)
-        # dw.advance()
+        # lin_op = 1.0/params.Re * ink.lap()
+        # dink[:] = (
+            # -ink.vec_dot_nabla(ux.getp(), uz.getp())
+        # )
+        # simulation._integrator.integrate(ink, dink, lin_op)
 
-        ## Corrector
-        # w.to_physical()
-        # dw[:] = -w.vec_dot_nabla(ux.getp(), uz.getp()) + 1.0/params.Re*lap_solver.lap*w[:]
-        # w[:] += integrator.corrector(dw)
-        # dw.advance()
+        simulation.end_loop()
 
-        t += params.dt
-
-    end = time.time() - start
-    print(end)
+    total_end = time.time() - total_start
+    print(f"Total time: {total_end/3600:.2f} hr")
+    print(f"Total time: {total_end:.2f} s")
 
 
 if __name__ == "__main__":
