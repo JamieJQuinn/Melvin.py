@@ -188,7 +188,7 @@ class Simulation:
         self._integrator._dt = dump_arrays["dt"]
         self._t = dump_arrays["t"]
         self._loop_counter = dump_arrays["loop_counter"]
-        old_params = dump_arrays["params"]
+        # old_params = dump_arrays["params"]
         # TODO compare new params to old params
 
     def register_ticker(self, ticker):
