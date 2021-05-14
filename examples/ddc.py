@@ -25,9 +25,10 @@ def calc_nusselt_number(tmp, uz, xp, params):
 
 
 def load_initial_conditions(params, w, tmp, xi):
-    init_var_with_noise(w)
-    init_var_with_noise(tmp)
-    init_var_with_noise(xi)
+    epsilon = 1e-2
+    init_var_with_noise(w, epsilon)
+    init_var_with_noise(tmp, epsilon)
+    init_var_with_noise(xi, epsilon)
 
 
 def main():
