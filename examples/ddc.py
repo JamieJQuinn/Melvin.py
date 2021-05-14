@@ -58,7 +58,7 @@ def main():
 
     simulation = Simulation(params, xp)
 
-    basis_fns = [BasisFunctions.COMPLEX_EXP, BasisFunctions.FDM]
+    basis_fns = [BasisFunctions.COMPLEX_EXP, BasisFunctions.COMPLEX_EXP]
 
     # Simulation variables
     w = simulation.make_variable("w", basis_fns)
