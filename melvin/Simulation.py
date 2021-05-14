@@ -139,7 +139,7 @@ class Simulation:
     def print_info(self):
         print(
             f"{self._t/self._params.final_time *100:.2f}% complete",
-            f"t = {self._t:.2f}",
+            f"t = {self._t:.2e}",
             f"dt = {self._integrator._dt:.2e}",
             f"Remaining: {self._wallclock_remaining/3600:.2f} hr",
         )
