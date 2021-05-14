@@ -5,7 +5,6 @@ import numpy as np
 
 import cupy
 import time
-import matplotlib.pyplot as plt
 
 from melvin import Parameters, Simulation, BasisFunctions
 
