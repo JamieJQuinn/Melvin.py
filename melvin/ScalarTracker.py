@@ -12,7 +12,7 @@ class ScalarTracker:
         self._times += [t]
         self._values += [val]
 
-    def save(self):
+    def save(self, _index):
         """Saves to file"""
         t = self._xp.array(self._times)
         vals = self._xp.array(self._values)

@@ -3,6 +3,7 @@ class Ticker:
         self._cadence = cadence
         self._fn = fn
         self._counter = 0
+        self.times_fired = 0
         self._dump_name = dump_name
 
         if is_loop_counter:
@@ -12,19 +13,26 @@ class Ticker:
 
     def __tick_counter(self, _t, loop_counter):
         if self._counter < loop_counter:
-            self._counter += self._cadence
-            self._fn(self._counter, self._cadence)
+            self.__fire()
 
     def __tick_time(self, t, _loop_counter):
         if self._counter < t:
-            self._counter += self._cadence
-            self._fn(self._counter, self._cadence)
+            self.__fire()
+
+    def __fire(self):
+        self._fn(self)
+        self._counter += self._cadence
+        self.times_fired += 1
 
     def dump(self):
-        return {"counter": self._counter}
+        return {
+            "counter": self._counter,
+            "times_fired": self.times_fired
+        }
 
     def restore(self, data):
         self._counter = data["counter"]
+        self.times_fired = data["times_fired"]
 
     def get_name(self):
         return self._dump_name

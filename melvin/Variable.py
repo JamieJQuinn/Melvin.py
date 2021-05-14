@@ -27,7 +27,6 @@ class Variable:
         self._array_factory = array_factory
 
         self._dump_name = dump_name
-        self._dump_counter = 0
 
         if basis_functions is None:
             raise Exception("Basis functions must be specified.")
@@ -128,9 +127,8 @@ class Variable:
         )
         return self._st.to_spectral(out, basis_functions=self._basis_functions)
 
-    def save(self):
-        fname = self._dump_name + f"{self._dump_counter:04d}.npy"
-        self._dump_counter += 1
+    def save(self, dump_counter):
+        fname = self._dump_name + f"{dump_counter:04d}.npy"
 
         self._xp.save(fname, self._pdata)
 

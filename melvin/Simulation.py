@@ -90,7 +90,7 @@ class Simulation:
 
         self._save_ticker = Ticker(
             self._params.save_cadence,
-            lambda _t, _l: self.save(),
+            self.save,
             dump_name="save_ticker",
             is_loop_counter=False,
         )
@@ -127,17 +127,17 @@ class Simulation:
         # Set when tracker is saved to file
         self._save_vars += self._trackers
 
-    def track_scalars(self, counter, cadence):
+    def track_scalars(self, ticker):
         for tracker, func in zip(self._trackers, self._tracker_fns):
             tracker.append(self._t, func())
 
-    def set_dt(self, counter, cadence):
+    def set_dt(self, ticker):
         self._integrator.set_dt(self._ux, self._uz)
 
-    def save(self):
+    def save(self, ticker):
         self.print_info()
         for var in self._save_vars:
-            var.save()
+            var.save(ticker.times_fired)
 
     def print_info(self):
         print(
@@ -150,9 +150,8 @@ class Simulation:
     def form_dumpname(self, index):
         return f"dump{index:04d}.npz"
 
-    def dump(self, counter, cadence):
-        fname = self.form_dumpname(self._dump_idx)
-        self._dump_idx += 1
+    def dump(self, ticker):
+        fname = self.form_dumpname(ticker.times_fired)
 
         dump_data = {
             var.get_name(): self._data_trans.to_host(var[:])
@@ -181,7 +180,6 @@ class Simulation:
 
     def load(self, index):
         fname = self.form_dumpname(index)
-        self._dump_idx = index
         dump_arrays = self._xp.load(fname)
         for var in self._dump_vars:
             var.load(dump_arrays[var.dump_name])
@@ -205,9 +203,9 @@ class Simulation:
         for ticker in self._tickers:
             ticker.tick(self._t, self._loop_counter)
 
-    def calc_time_remaining(self, counter, cadence):
+    def calc_time_remaining(self, ticker):
         self._timer.split()
-        wallclock_per_timestep = self._timer.diff / cadence
+        wallclock_per_timestep = self._timer.diff / ticker._cadence
         self._wallclock_remaining = (
             wallclock_per_timestep
             * (self._params.final_time - self._t)
