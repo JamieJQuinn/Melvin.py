@@ -1,4 +1,5 @@
 import numpy as np
+from numpy.random import default_rng
 import scipy.sparse
 import scipy.sparse.linalg
 
@@ -23,6 +24,15 @@ def load_scipy_sparse_linalg(xp):
         import cupyx.scipy.sparse.linalg
 
         return cupyx.scipy.sparse.linalg
+
+
+def init_var_with_noise(var, epsilon, seed=0):
+    rng = default_rng(seed)
+
+    data_p = np.zeros_like(var.getp())
+    data_p += epsilon * (2 * rng.random(var.getp().shape) - 1.0)
+
+    var.load(data_p, is_physical=True)
 
 
 def calc_kinetic_energy(ux, uz, xp, params):

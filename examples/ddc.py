@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import numpy as np
-from numpy.random import default_rng
 
 import cupy
 import time
@@ -53,38 +52,10 @@ def calc_nusselt_number(tmp, uz, xp, params):
     return 1.0 - flux
 
 
-def form_dumpname(index):
-    return f"dump{index:04d}.npz"
-
-
-def dump(index, xp, data_trans, w, dw, tmp, dtmp, xi, dxi):
-    fname = form_dumpname(index)
-    np.savez(
-        fname,
-        w=data_trans.to_host(w[:]),
-        dw=data_trans.to_host(dw.get_all()),
-        tmp=data_trans.to_host(tmp[:]),
-        dtmp=data_trans.to_host(dtmp.get_all()),
-        xi=data_trans.to_host(xi[:]),
-        dxi=data_trans.to_host(dxi.get_all()),
-        curr_idx=dw.get_curr_idx(),
-    )
-
-
-def load(index, xp, w, dw, tmp, dtmp, xi, dxi):
-    fname = form_dumpname(index)
-    dump_arrays = xp.load(fname)
-    w.load(dump_arrays["w"])
-    dw.load(dump_arrays["dw"])
-    tmp.load(dump_arrays["tmp"])
-    dtmp.load(dump_arrays["dtmp"])
-    xi.load(dump_arrays["xi"])
-    dxi.load(dump_arrays["dxi"])
-
-    # This assumes all variables are integrated together
-    dw.set_curr_idx(dump_arrays["curr_idx"])
-    dtmp.set_curr_idx(dump_arrays["curr_idx"])
-    dxi.set_curr_idx(dump_arrays["curr_idx"])
+def load_initial_conditions(params, w, tmp, xi):
+    init_var_with_noise(w)
+    init_var_with_noise(tmp)
+    init_var_with_noise(xi)
 
 
 def main():
