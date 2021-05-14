@@ -17,10 +17,7 @@ class Variable:
         dt=None,
         array_factory=None,
         dump_name=None,
-        basis_functions=[
-            BasisFunctions.COMPLEX_EXP,
-            BasisFunctions.COMPLEX_EXP,
-        ],
+        basis_functions=None,
     ):
         self._params = params
         self._xp = xp
@@ -31,6 +28,9 @@ class Variable:
 
         self._dump_name = dump_name
         self._dump_counter = 0
+
+        if basis_functions is None:
+            raise Error("Basis functions must be specified.")
 
         self._basis_functions = basis_functions
 

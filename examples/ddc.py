@@ -7,7 +7,7 @@ import cupy
 import time
 import matplotlib.pyplot as plt
 
-from melvin import Parameters, Simulation
+from melvin import Parameters, Simulation, BasisFunctions
 
 from melvin.utility import (
     calc_kinetic_energy,
@@ -58,18 +58,20 @@ def main():
 
     simulation = Simulation(params, xp)
 
+    basis_fns = [BasisFunctions.COMPLEX_EXP, BasisFunctions.FDM]
+
     # Simulation variables
-    w = simulation.make_variable("w")
-    tmp = simulation.make_variable("tmp")
-    xi = simulation.make_variable("xi")
+    w = simulation.make_variable("w", basis_fns)
+    tmp = simulation.make_variable("tmp", basis_fns)
+    xi = simulation.make_variable("xi", basis_fns)
 
     dw = simulation.make_derivative("dw")
     dtmp = simulation.make_derivative("dtmp")
     dxi = simulation.make_derivative("dxi")
 
-    psi = simulation.make_variable("psi")
-    ux = simulation.make_variable("ux")
-    uz = simulation.make_variable("uz")
+    psi = simulation.make_variable("psi", basis_fns)
+    ux = simulation.make_variable("ux", basis_fns)
+    uz = simulation.make_variable("uz", basis_fns)
 
     simulation.init_laplacian_solver(psi._basis_functions)
 

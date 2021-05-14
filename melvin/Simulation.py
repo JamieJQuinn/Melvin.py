@@ -49,7 +49,7 @@ class Simulation:
         )
         self.register_ticker(self._wallclock_ticker)
 
-    def make_variable(self, name):
+    def make_variable(self, name, basis_fns):
         return Variable(
             self._params,
             self._xp,
@@ -58,6 +58,7 @@ class Simulation:
             dt=self._data_trans,
             array_factory=self._array_factory,
             dump_name=name,
+            basis_functions=basis_fns,
         )
 
     def make_derivative(self, name):
