@@ -31,8 +31,10 @@ def load_scipy_sparse_linalg(xp):
 def init_var_with_noise(var, epsilon, seed=0):
     rng = default_rng(seed)
 
-    data_p = np.zeros_like(var.getp())
-    data_p += epsilon * (2 * rng.random(var.getp().shape) - 1.0)
+    var_shape = var.getp().shape
+
+    data_p = np.zeros(var_shape)
+    data_p += epsilon * (2 * rng.random(var_shape) - 1.0)
 
     var.load(data_p, is_physical=True)
 
