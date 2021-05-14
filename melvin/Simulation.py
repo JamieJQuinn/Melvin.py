@@ -36,6 +36,8 @@ class Simulation:
 
         self._dump_vars = []
         self._dump_dvars = []
+        self._dump_idx = 0
+
         self._save_vars = []
 
         self._tickers = []
@@ -148,8 +150,9 @@ class Simulation:
         return f"dump{index:04d}.npz"
 
     def dump(self, counter, cadence):
-        index = counter
-        fname = self.form_dumpname(index)
+        fname = self.form_dumpname(self._dump_idx)
+        self._dump_idx += 1
+
         dump_data = {
             var.get_name(): self._data_trans.to_host(var[:])
             for var in self._dump_vars
@@ -177,6 +180,7 @@ class Simulation:
 
     def load(self, index):
         fname = self.form_dumpname(index)
+        self._dump_idx = index
         dump_arrays = self._xp.load(fname)
         for var in self._dump_vars:
             var.load(dump_arrays[var.dump_name])
