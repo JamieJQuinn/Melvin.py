@@ -39,11 +39,9 @@ class Integrator:
             self._dz / self._xp.max(uz.getp()),
         )
         if self._dt > cfl_dt or np.isnan(cfl_dt):
-            print("CFL condition breached")
-            return
+            raise Exception("CFL condition breached")
         while self._dt > self._cfl_cutoff * cfl_dt:
             self._dt = self._dt * 0.9
-        return self._dt
 
     def override_dt(self, dt):
         """Manually set dt"""
