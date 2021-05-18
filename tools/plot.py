@@ -41,6 +41,8 @@ parser.add_argument(
     help="smooth cmap changes using moving average",
 )
 parser.add_argument("--save", action="store_true", help="save to <inname>.png")
+parser.add_argument("--vmax", type=float, help="override vmax in colourmap")
+parser.add_argument("--vmin", type=float, help="override vmin in colourmap")
 parser.add_argument(
     "--replace", action="store_true", help="overwrite existing outputs"
 )
@@ -119,6 +121,10 @@ def plot(v):
                 if args.smooth:
                     vmax = ma_vec[i]
                     vmin = -vmax
+                if args.vmax:
+                    vmax = args.vmax
+                if args.vmin:
+                    vmin = args.vmin
                 img = plt.imshow(
                     data.T,
                     origin="lower",
