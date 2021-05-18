@@ -50,7 +50,7 @@ def main():
         "integrator": "semi-implicit",
         "save_cadence": 0.05,
         "dump_cadence": 10,
-        "precision": "float",
+        "precision": "single",
     }
     params = Parameters(PARAMS)
     params.save()

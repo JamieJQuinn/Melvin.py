@@ -65,7 +65,7 @@ def main():
         "max_time": 3.0,
         "final_time": 10,
         "save_cadence": 0.003,
-        "precision": "float",
+        "precision": "single",
         "spatial_derivative_order": 2,
         "integrator_order": 2,
         "integrator": "semi-implicit",

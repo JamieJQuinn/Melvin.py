@@ -8,7 +8,7 @@ class Parameters:
 
     # Default parameters
     integrator_order = 2
-    integrator = "explicit"
+    integrator = "semi-implicit"
     spatial_derivative_order = 2
     alpha = 0.51
     cfl_cutoff = 0.5
@@ -84,7 +84,7 @@ class Parameters:
         if self.precision == "double":
             self.complex = np.complex128
             self.float = np.float64
-        elif self.precision == "float":
+        elif self.precision == "single":
             self.complex = np.complex64
             self.float = np.float32
 

@@ -40,7 +40,7 @@ def main():
         "save_cadence": 5e-5,
         "dump_cadence": 1e-1,
         "discretisation": ["spectral", "fdm"],
-        "precision": "float",
+        "precision": "single",
     }
     params = Parameters(PARAMS)
     params.save()
