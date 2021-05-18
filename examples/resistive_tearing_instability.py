@@ -20,12 +20,16 @@ xp = cupy
 
 
 def create_shear_layer(z0, width, Z):
-    return -np.power(sech((Z-z0)/width), 2)/width
+    return -np.power(sech((Z - z0) / width), 2) / width
 
 
 def create_sine_perturbation(z0, width, wavenumber, params, X, Z):
-    spectral_wavenumber = 2*np.pi/params.lx
-    return spectral_wavenumber * -np.cos(wavenumber*spectral_wavenumber * X) * np.exp( - ((Z-z0)/width)**2)
+    spectral_wavenumber = 2 * np.pi / params.lx
+    return (
+        spectral_wavenumber
+        * -np.cos(wavenumber * spectral_wavenumber * X)
+        * np.exp(-(((Z - z0) / width) ** 2))
+    )
 
 
 def load_initial_conditions(params, w, j):
@@ -43,13 +47,13 @@ def load_initial_conditions(params, w, j):
 
     # Create straight shear layer
     # w0_p = create_shear_layer(0.5, 0.1, Z)
-    j0_p = create_shear_layer(0.5, 0.05, Z)
+    j0_p = create_shear_layer(0.5, 0.01, Z)
 
     # Create sine perturbation
-    j0_p += epsilon * create_sine_perturbation(0.5, 0.2, 1, params, X, Z)
+    # j0_p += epsilon * create_sine_perturbation(0.5, 0.2, 1, params, X, Z)
 
     # Create random perturbation
-    # j0_p += epsilon * (2 * rng.random((params.nx, params.nz)) - 1.0)
+    j0_p += epsilon * (2 * rng.random((params.nx, params.nz)) - 1.0)
 
     # Load into vorticity
     j.load(j0_p, is_physical=True)
@@ -57,21 +61,21 @@ def load_initial_conditions(params, w, j):
 
 def main():
     PARAMS = {
-        "nx": 2 ** 8,
-        "nz": 2 ** 8,
-        "lx": 1.0,
+        "nx": 2 ** 12,
+        "nz": 2 ** 11,
+        "lx": 16.0 / 9,
         "lz": 1.0,
         "initial_dt": 1e-4,
         "cfl_cutoff": 0.5,
-        "Re": 1e2,
-        "S": 1e5,
-        "final_time": 10,
+        "Re": 1e6,
+        "S": 1e6,
+        "final_time": 1,
         "spatial_derivative_order": 2,
         "integrator_order": 2,
         "integrator": "semi-implicit",
-        "save_cadence": 0.05,
-        "dump_cadence": 10,
-        "precision": "float",
+        "save_cadence": 0.003,
+        "dump_cadence": 0.1,
+        "precision": "single",
     }
     params = Parameters(PARAMS)
     params.save()
@@ -98,7 +102,7 @@ def main():
     simulation.init_laplacian_solver(psi._basis_functions)
 
     simulation.config_dump([w, j], [dw, dj])
-    simulation.config_save([w, j])
+    simulation.config_save([j])
     simulation.config_cfl(ux, uz)
     simulation.config_scalar_trackers(
         {
@@ -128,12 +132,16 @@ def main():
             j, phi, bx, bz, simulation.get_laplacian_solver()
         )
 
-        lin_op = 1.0/params.Re * w.lap()
-        dw[:] = -w.vec_dot_nabla(ux.getp(), uz.getp()) + j.vec_dot_nabla(bx.getp(), bz.getp())
+        lin_op = 1.0 / params.Re * w.lap()
+        dw[:] = -w.vec_dot_nabla(ux.getp(), uz.getp()) + j.vec_dot_nabla(
+            bx.getp(), bz.getp()
+        )
         simulation._integrator.integrate(w, dw, lin_op)
 
-        lin_op = 1.0/params.S * j.lap()
-        dj[:] = -j.vec_dot_nabla(ux.getp(), uz.getp()) + w.vec_dot_nabla(bx.getp(), bz.getp())
+        lin_op = 1.0 / params.S * j.lap()
+        dj[:] = -j.vec_dot_nabla(ux.getp(), uz.getp()) + w.vec_dot_nabla(
+            bx.getp(), bz.getp()
+        )
         simulation._integrator.integrate(j, dj, lin_op)
 
         simulation.end_loop()
