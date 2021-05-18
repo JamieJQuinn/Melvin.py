@@ -117,7 +117,7 @@ def main():
     total_start = time.time()
 
     # Main loop
-    while simulation._t < params.final_time:
+    while simulation.is_running():
         # SOLVER STARTS HERE
         calc_velocity_from_vorticity(
             w, psi, ux, uz, simulation.get_laplacian_solver()
