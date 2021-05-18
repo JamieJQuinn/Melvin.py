@@ -90,6 +90,8 @@ The examples can be found in the `examples` folder and provide a useful starting
 - Rayleigh-Bénard convection
 - Kelvin-Helmholtz instability
 - Double-diffusive convection (with formation of thermohaline staircases)
+- Taylor-Green vortex
+- Resistive tearing instability
 
 Let us run the double-diffusive convection example, `ddc.py` and place output files into a data directory. The parameters, initial conditions and boundary conditions are all set within `ddc.py` file and can be run with
 ```bash
