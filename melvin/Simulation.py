@@ -134,6 +134,7 @@ class Simulation:
     def set_dt(self, ticker):
         self._integrator.set_dt(self._ux, self._uz)
 
+
     def save(self, ticker):
         self.print_info()
         for var in self._save_vars:
@@ -193,6 +194,9 @@ class Simulation:
         self._loop_counter = dump_arrays["loop_counter"]
         # old_params = dump_arrays["params"]
         # TODO compare new params to old params
+
+    def is_running(self):
+        return self._t < self._params.final_time
 
     def register_ticker(self, ticker):
         self._tickers.append(ticker)
