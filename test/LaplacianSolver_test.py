@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 from numpy.testing import assert_array_almost_equal
 
-from melvin import Variable, LaplacianSolver, ArrayFactory
+from melvin import Variable, LaplacianSolver, ArrayFactory, BasisFunctions
 from melvin.utility import load_scipy_sparse
 
 
@@ -10,7 +10,11 @@ def test_fdm_laplacian_solver(fdm_parameters):
     p = fdm_parameters
     array_factory = ArrayFactory(p, np)
 
-    psi = Variable(p, np, array_factory=array_factory)
+    basis_fns = [BasisFunctions.COMPLEX_EXP, BasisFunctions.COMPLEX_EXP]
+
+    psi = Variable(
+        p, np, array_factory=array_factory, basis_functions=basis_fns
+    )
 
     laplacian_solver = LaplacianSolver(p, np, psi, array_factory=array_factory)
 

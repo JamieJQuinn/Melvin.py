@@ -17,7 +17,6 @@ class LaplacianSolver:
 
         if p.is_fully_spectral():
             self.lap = spatial_diff.calc_lap(basis_fns)
-            print(self.lap)
             self.solve = self._solve_fully_spectral
         else:
             offset = self._xp.array([-1, 0, 1])

@@ -1,3 +1,4 @@
+import json
 import numpy as np
 import sys
 
@@ -7,19 +8,19 @@ class Parameters:
 
     # Default parameters
     integrator_order = 2
-    integrator = "explicit"
+    integrator = "semi-implicit"
     spatial_derivative_order = 2
     alpha = 0.51
     cfl_cutoff = 0.5
     cfl_cadence = 10  # Number of timesteps between CFL checks
-    ke_cadence = 100  # Number of timesteps between kinetic energy save
-    save_cadence = 100
+    tracker_cadence = (
+        100  # Number of timesteps between calculating time series
+    )
+    save_cadence = 100  # Time between saves
     load_from = None
 
     discretisation = ["spectral", "spectral"]
-
-    complex = np.complex128
-    float = np.float64
+    precision = "double"
 
     # Required parameters
     nx = None
@@ -34,6 +35,8 @@ class Parameters:
                 sys.exit(-1)
 
         self.load_from_dict(params)
+
+        self._original_params = params
 
     def load_from_dict(self, params):
         for key in params:
@@ -78,5 +81,16 @@ class Parameters:
         self.dx = self.lx / self.nx
         self.dz = self.lz / self.nz
 
+        if self.precision == "double":
+            self.complex = np.complex128
+            self.float = np.float64
+        elif self.precision == "single":
+            self.complex = np.complex64
+            self.float = np.float32
+
         if "initial_dt" not in params:
             self.initial_dt = 0.2 * min(self.dx, self.dz)
+
+    def save(self, fname="params.json"):
+        with open(fname, "w") as fp:
+            json.dump(self._original_params, fp)

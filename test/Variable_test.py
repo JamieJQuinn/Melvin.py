@@ -9,6 +9,7 @@ from melvin import (
     SpatialDifferentiator,
     ArrayFactory,
     SpectralTransformer,
+    BasisFunctions,
 )
 
 
@@ -18,7 +19,16 @@ def test_spatial_derivatives(parameters, st, sd, array_factory):
     z = np.linspace(0, p.lz, p.nz, endpoint=False)
     X, Z = np.meshgrid(x, z, indexing="ij")
 
-    var = Variable(parameters, np, st=st, sd=sd, array_factory=array_factory)
+    basis_fns = [BasisFunctions.COMPLEX_EXP, BasisFunctions.COMPLEX_EXP]
+
+    var = Variable(
+        parameters,
+        np,
+        st=st,
+        sd=sd,
+        array_factory=array_factory,
+        basis_functions=basis_fns,
+    )
     var.setp(np.cos(2 * np.pi * X) * np.cos(2 * np.pi * Z))
 
     dvardx = var.pddx()
@@ -44,8 +54,15 @@ def test_fdm_nabla2(fdm_parameters):
 
     array_factory = ArrayFactory(p, np)
     spatial_diff = SpatialDifferentiator(p, np, array_factory=array_factory)
+    basis_fns = [BasisFunctions.COMPLEX_EXP, BasisFunctions.COMPLEX_EXP]
 
-    var = Variable(p, np, sd=spatial_diff, array_factory=array_factory)
+    var = Variable(
+        p,
+        np,
+        sd=spatial_diff,
+        array_factory=array_factory,
+        basis_functions=basis_fns,
+    )
     var[1] = 0.5 * z ** 2
 
     nabla2 = var.snabla2()
@@ -64,8 +81,15 @@ def test_spectral_nabla2(parameters):
 
     array_factory = ArrayFactory(p, np)
     spatial_diff = SpatialDifferentiator(p, np, array_factory=array_factory)
+    basis_fns = [BasisFunctions.COMPLEX_EXP, BasisFunctions.COMPLEX_EXP]
 
-    var = Variable(p, np, sd=spatial_diff, array_factory=array_factory)
+    var = Variable(
+        p,
+        np,
+        sd=spatial_diff,
+        array_factory=array_factory,
+        basis_functions=basis_fns,
+    )
     var[:] = 1
 
     nabla2 = var.snabla2()

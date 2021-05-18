@@ -129,3 +129,11 @@ ffmpeg -r 30 -i tmp%04d.npy.png -c:v libx264 -vf "format=yuv420p,scale=1024:-2" 
 ## 2021-04-01
 
 Finally managed to implement cosine and sine transforms manually using pre and post processing of the standard FFT.
+
+## 2021-05-14
+
+Useful snippet:
+
+```fish
+for f in *.png; convert $f -trim trim_$f; end
+```

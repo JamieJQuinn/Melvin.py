@@ -17,10 +17,7 @@ class Variable:
         dt=None,
         array_factory=None,
         dump_name=None,
-        basis_functions=[
-            BasisFunctions.COMPLEX_EXP,
-            BasisFunctions.COMPLEX_EXP,
-        ],
+        basis_functions=None,
     ):
         self._params = params
         self._xp = xp
@@ -30,7 +27,9 @@ class Variable:
         self._array_factory = array_factory
 
         self._dump_name = dump_name
-        self._dump_counter = 0
+
+        if basis_functions is None:
+            raise Exception("Basis functions must be specified.")
 
         self._basis_functions = basis_functions
 
@@ -128,14 +127,16 @@ class Variable:
         )
         return self._st.to_spectral(out, basis_functions=self._basis_functions)
 
-    def save(self):
-        fname = self._dump_name + f"{self._dump_counter:04d}.npy"
-        self._dump_counter += 1
+    def save(self, dump_counter):
+        fname = self._dump_name + f"{dump_counter:04d}.npy"
 
         self._xp.save(fname, self._pdata)
 
     def on_host(self):
         return self._dt.to_host(self.gets())
+
+    def get_name(self):
+        return self._dump_name
 
 
 def scale_variable(var, outsize, xp):
