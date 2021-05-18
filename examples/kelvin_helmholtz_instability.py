@@ -13,7 +13,7 @@ from melvin.utility import (
     calc_kinetic_energy,
     calc_velocity_from_vorticity,
     init_var_with_noise,
-    sech
+    sech,
 )
 
 xp = cupy
@@ -118,15 +118,13 @@ def main():
             w, psi, ux, uz, simulation.get_laplacian_solver()
         )
 
-        lin_op = 1.0/params.Re * w.lap()
-        dw[:] = (
-            -w.vec_dot_nabla(ux.getp(), uz.getp())
-        )
+        lin_op = 1.0 / params.Re * w.lap()
+        dw[:] = -w.vec_dot_nabla(ux.getp(), uz.getp())
         simulation._integrator.integrate(w, dw, lin_op)
 
         # lin_op = 1.0/params.Re * ink.lap()
         # dink[:] = (
-            # -ink.vec_dot_nabla(ux.getp(), uz.getp())
+        # -ink.vec_dot_nabla(ux.getp(), uz.getp())
         # )
         # simulation._integrator.integrate(ink, dink, lin_op)
 

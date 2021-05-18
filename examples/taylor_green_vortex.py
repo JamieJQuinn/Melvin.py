@@ -13,7 +13,7 @@ from melvin.utility import (
     calc_kinetic_energy,
     calc_velocity_from_vorticity,
     init_var_with_noise,
-    sech
+    sech,
 )
 
 xp = cupy
@@ -24,9 +24,7 @@ def load_initial_conditions(params, w):
     z = np.linspace(0, params.lz, params.nz, endpoint=False)
     X, Z = np.meshgrid(x, z, indexing="ij")
 
-    tg_wavelength = 1
-
-    w0_p = -2*np.cos(X)*np.cos(Z)
+    w0_p = -2 * np.cos(X) * np.cos(Z)
 
     w.load(w0_p, is_physical=True)
 
@@ -35,8 +33,8 @@ def main():
     PARAMS = {
         "nx": 2 ** 10,
         "nz": 2 ** 10,
-        "lx": 2*np.pi,
-        "lz": 2*np.pi,
+        "lx": 2 * np.pi,
+        "lz": 2 * np.pi,
         "nu": 0.25,
         "final_time": 1,
         "save_cadence": 1,
@@ -92,9 +90,7 @@ def main():
         )
 
         lin_op = params.nu * w.lap()
-        dw[:] = (
-            -w.vec_dot_nabla(ux.getp(), uz.getp())
-        )
+        dw[:] = -w.vec_dot_nabla(ux.getp(), uz.getp())
         simulation._integrator.integrate(w, dw, lin_op)
 
         simulation.end_loop()

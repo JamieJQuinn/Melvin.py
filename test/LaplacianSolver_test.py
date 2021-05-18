@@ -12,7 +12,9 @@ def test_fdm_laplacian_solver(fdm_parameters):
 
     basis_fns = [BasisFunctions.COMPLEX_EXP, BasisFunctions.COMPLEX_EXP]
 
-    psi = Variable(p, np, array_factory=array_factory, basis_functions=basis_fns)
+    psi = Variable(
+        p, np, array_factory=array_factory, basis_functions=basis_fns
+    )
 
     laplacian_solver = LaplacianSolver(p, np, psi, array_factory=array_factory)
 

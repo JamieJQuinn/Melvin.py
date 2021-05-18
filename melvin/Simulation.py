@@ -134,7 +134,6 @@ class Simulation:
     def set_dt(self, ticker):
         self._integrator.set_dt(self._ux, self._uz)
 
-
     def save(self, ticker):
         self.print_info()
         for var in self._save_vars:

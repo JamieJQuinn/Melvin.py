@@ -25,10 +25,7 @@ class Ticker:
         self.times_fired += 1
 
     def dump(self):
-        return {
-            "counter": self._counter,
-            "times_fired": self.times_fired
-        }
+        return {"counter": self._counter, "times_fired": self.times_fired}
 
     def restore(self, data):
         self._counter = data["counter"]
