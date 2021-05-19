@@ -97,7 +97,7 @@ Let us run the double-diffusive convection example, `ddc.py` and place output fi
 ```bash
 mkdir data
 cd data
-python ../examples/ddc.py
+python ../examples/double_diffusive_convection.py
 ```
 
 ## Getting help
