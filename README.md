@@ -88,10 +88,10 @@ pip install .[cupy]
 The examples can be found in the `examples` folder and provide a useful starting point. Currently the examples are
 
 - Rayleigh-Bénard convection
-- Kelvin-Helmholtz instability
+- [Kelvin-Helmholtz instability](https://www.youtube.com/watch?v=fTPC8rOjnyQ)
 - Double-diffusive convection (with formation of thermohaline staircases)
 - Taylor-Green vortex
-- Resistive tearing instability
+- [Resistive tearing instability](https://www.youtube.com/watch?v=VhUC_LvYtNA)
 
 Let us run the double-diffusive convection example, `ddc.py` and place output files into a data directory. The parameters, initial conditions and boundary conditions are all set within `ddc.py` file and can be run with
 ```bash
