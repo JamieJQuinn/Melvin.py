@@ -36,15 +36,14 @@ def main():
         "lx": 2 * np.pi,
         "lz": 2 * np.pi,
         "nu": 0.25,
-        "final_time": 1,
-        "save_cadence": 1,
-        "precision": "double",
-        "spatial_derivative_order": 4,
-        "integrator_order": 4,
+        "initial_dt": 1e-3,
+        "precision": "single",
+        "spatial_derivative_order": 2,
+        "integrator_order": 2,
         "integrator": "semi-implicit",
         "cfl_cutoff": 0.5,
     }
-    PARAMS["initial_dt"] = 0.001 * PARAMS["lx"] / PARAMS["nx"]
+    PARAMS["final_time"] = 1000 * PARAMS["initial_dt"]
     params = Parameters(PARAMS)
     params.save()
 
@@ -94,6 +93,17 @@ def main():
         simulation._integrator.integrate(w, dw, lin_op)
 
         simulation.end_loop()
+
+    final_ke = calc_kinetic_energy(ux, uz, xp, params)
+    initial_ke = simulation._trackers[0]._values[0]
+    viscous_factor = final_ke / initial_ke
+    true_factor = np.exp(-simulation._t)
+    print("abs error = ", abs(viscous_factor - true_factor))
+    print(
+        "rel error = ",
+        abs(viscous_factor - true_factor) / true_factor * 100,
+        "%",
+    )
 
     total_end = time.time() - total_start
     print(f"Total time: {total_end/3600:.2f} hr")
