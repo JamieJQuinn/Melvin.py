@@ -1,6 +1,6 @@
 try:
     import cupy
-except ModuleNotFoundError:
+except (ModuleNotFoundError, ImportError):
     pass
 
 
