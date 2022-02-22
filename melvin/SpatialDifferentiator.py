@@ -21,6 +21,7 @@ class SpatialDifferentiator:
         elif params.spatial_derivative_order == 4:
             self.pddx = self.__p_ddx_central4
             self.pddz = self.__p_ddz_central4
+            self.pd2dz2 = self.__p_d2dz2_central4
 
         if params.discretisation[0] == "fdm":
             # self.sddx = self.pddx
@@ -109,6 +110,18 @@ class SpatialDifferentiator:
         dz = self._params.dz
 
         out[:, 1:-1] = (var[:, 2:] - 2 * var[:, 1:-1] + var[:, :-2]) / (
+            dz ** 2
+        )
+
+        return out
+
+    def __p_d2dz2_central4(self, var, out=None):
+        if out is None:
+            out = self._xp.zeros_like(var)
+
+        dz = self._params.dz
+
+        out[:, 2:-2] = (-1.0/12*var[:, 4:] + 4.0/3*var[:,3:-1] - 5.0/2 * var[:, 2:-2] + 4.0/3*var[:, 1:-3] -1.0/12* var[:, :-4]) / (
             dz ** 2
         )
 
