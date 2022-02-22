@@ -19,7 +19,7 @@ for f in filenames:
     ke_smooth = (
         cumsum_vec[window_width:] - cumsum_vec[:-window_width]
     ) / window_width
-    plt.semilogy(t[: -window_width + 1], ke_smooth, label=f)
+    plt.plot(t[: -window_width + 1], ke_smooth, label=f)
     max_t = max(max_t, t[-1])
 
 # plt.ylim(0, 1000)
