@@ -140,11 +140,13 @@ class Simulation:
             var.save(ticker.times_fired)
 
     def print_info(self):
+        hours_remaining = int(self._wallclock_remaining/3600)
+        minutes_remaining = int((self._wallclock_remaining/3600.0 - hours_remaining)*60)
         print(
             f"{self._t/self._params.final_time *100:.2f}% complete",
             f"t = {self._t:.2e}",
             f"dt = {self._integrator._dt:.2e}",
-            f"Remaining: {self._wallclock_remaining/3600:.2f} hr",
+            f"Remaining: {hours_remaining} hr, {minutes_remaining} min",
         )
 
     def form_dumpname(self, index):
