@@ -44,6 +44,7 @@ class LaplacianSolver:
                 for n_ in range(p.nn)
             ]
             # boundary conditions TODO put in better location
+            print("WARNING: Laplacian solver only implemented for boundary conditions where soln matches value of rhs")
             for lap in self.laps:
                 lap[0, 0] = 1.0
                 lap[0, 1] = 0.0
