@@ -4,8 +4,9 @@ import time
 class Timer:
     """Keeps track of current runtime"""
 
-    _start_time = 0.0
-    diff = 0.0
+    def __init__(self):
+        self._start_time = 0.0
+        self.diff = 0.0
 
     def __time(self):
         return time.time()
