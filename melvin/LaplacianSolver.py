@@ -50,6 +50,9 @@ class LaplacianSolver:
                 lap[0, 1] = 0.0
                 lap[-1, -1] = 1.0
                 lap[-1, -2] = 0.0
+            self.solvers = [
+                self._linalg.factorized(lap) for lap in self.laps
+            ]
             self.solve = self._solve_fdm
 
     def _solve_fully_spectral(self, rhs, out=None):
@@ -70,6 +73,7 @@ class LaplacianSolver:
 
         p = self._params
         for n in range(p.nn):
-            out[n, :] = self._linalg.spsolve(self.laps[n], rhs[n])
+            out[n, :] = self.solvers[n](rhs[n])
+            # out[n, :] = self._linalg.spsolve(self.laps[n], rhs[n])
 
         return out
