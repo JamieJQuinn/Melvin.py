@@ -25,23 +25,24 @@ def load_initial_conditions(params, w, tmp):
 
 def main():
     PARAMS = {
-        "nx": 2 ** 7,
-        "nz": 2 ** 6,
+        "nx": 2 ** 10,
+        "nz": 2 ** 9,
         "lx": 16.0 / 9,
         "lz": 1.0,
-        "initial_dt": 1e-5,
+        "initial_dt": 1e-7,
         "cfl_cutoff": 0.5,
-        "Pr": 1.0,
-        "Ra": 1e6,
-        "final_time": 1e-1,
+        "Pr": 4.3,
+        "Ra": 1e8,
+        "final_time": 0.005,
         "spatial_derivative_order": 2,
         "integrator_order": 2,
         "integrator": "explicit",
-        "save_cadence": 5e-5,
+        "save_cadence": 1e-5,
         "dump_cadence": 1e-1,
         "discretisation": ["spectral", "fdm"],
         "precision": "single",
     }
+    # PARAMS['final_time'] = 10*PARAMS['initial_dt']
     params = Parameters(PARAMS)
     params.save()
 
@@ -99,20 +100,38 @@ def main():
         dtmp[:] = -tmp.vec_dot_nabla(ux.getp(), uz.getp())
         simulation._integrator.integrate(tmp, dtmp, diffusion_term)
 
-        w[1:, 0] = 0.0
-        w[1:, -1] = 0.0
+        # Boundary conditions
+        if params.spatial_derivative_order == 2:
+            w[1:, 0] = 0.0
+            w[1:, -1] = 0.0
 
-        psi[1:, 0] = 0.0
-        psi[1:, -1] = 0.0
+            psi[1:, 0] = 0.0
+            psi[1:, -1] = 0.0
 
+            tmp[0, 0] = 1.0
+            tmp[0, -1] = 0.0
+
+            tmp[1:, 0] = 0.0
+            tmp[1:, -1] = 0.0
+        elif params.spatial_derivative_order == 4:
+            w[1:, :2] = 0.0
+            w[1:, -2:] = 0.0
+
+            psi[1:, :2] = 0.0
+            psi[1:, -2:] = 0.0
+
+            tmp[0, :2] = 1.0
+            tmp[0, -2:] = 0.0
+
+            tmp[1:, :2] = 0.0
+            tmp[1:, -2:] = 0.0
+        else:
+            raise NotImplementedError("Spatial derivative order not correctly set")
+
+        # Suppress large-scale horizontal flows
         psi[0, :] = 0.0
         w[0, :] = 0.0
 
-        tmp[0, 0] = 1.0
-        tmp[0, -1] = 0.0
-
-        tmp[1:, 0] = 0.0
-        tmp[1:, -1] = 0.0
 
         simulation.end_loop()
 
