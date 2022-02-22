@@ -39,7 +39,7 @@ class LaplacianSolver:
                         offset,
                     ),
                     shape=(p.nz, p.nz),
-                    dtype=p.float,
+                    dtype=p.complex,
                 ).tocsr()
                 for n_ in range(p.nn)
             ]
