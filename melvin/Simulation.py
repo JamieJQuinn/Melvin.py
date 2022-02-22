@@ -184,12 +184,12 @@ class Simulation:
         fname = self.form_dumpname(index)
         dump_arrays = self._xp.load(fname)
         for var in self._dump_vars:
-            var.load(dump_arrays[var.dump_name])
+            var.load(dump_arrays[var._dump_name])
         for dvar in self._dump_dvars:
-            dvar.load(dump_arrays[dvar.dump_name])
+            dvar.load(dump_arrays[dvar._dump_name])
             dvar.set_curr_idx(dump_arrays["curr_idx"])
         for ticker in self._tickers:
-            ticker.restore(dump_arrays[ticker.dump_name])
+            ticker.restore(dump_arrays[ticker._dump_name])
         self._integrator._dt = dump_arrays["dt"]
         self._t = dump_arrays["t"]
         self._loop_counter = dump_arrays["loop_counter"]
