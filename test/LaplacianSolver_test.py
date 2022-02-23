@@ -1,9 +1,37 @@
 import numpy as np
-import pytest
+import scipy
 from numpy.testing import assert_array_almost_equal
+from functools import partial
 
 from melvin import Variable, LaplacianSolver, ArrayFactory, BasisFunctions
-from melvin.utility import load_scipy_sparse
+
+
+# def test_linear_operator(fdm_parameters):
+    # N = 100
+    # dx = 1./(N-1)
+
+    # b = np.linspace(0, 1., N)
+    # b[0] = -1./dx**2
+    # b[-1] = -1./dx**2
+
+    # buffer = np.zeros_like(b)
+
+    # def ddx(v, dx, out=None):
+        # if out is None:
+            # out = np.zeros_like(v)
+        # out[1:-1] = (v[:-2] + -2.*v[1:-1] + v[2:])/(dx**2)
+        # return out
+
+    # # Create linear operator
+    # linop = scipy.sparse.linalg.LinearOperator(
+        # (N, N),
+        # partial(ddx, dx=dx, out=buffer)
+    # )
+
+    # x = scipy.sparse.linalg.cg(linop, b)
+
+    # print(x)
+    # assert(False)
 
 
 def test_fdm_laplacian_solver(fdm_parameters):
