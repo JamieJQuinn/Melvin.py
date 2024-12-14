@@ -35,8 +35,8 @@ def main():
     LX = 335.0 * factor
     LZ = 9.0 / 16 * LX
     PARAMS = {
-        "nx": 2 ** 9,
-        "nz": 2 ** 8,
+        "nx": 2 ** 12,
+        "nz": 2 ** 11,
         "lx": LX,
         "lz": LZ,
         "initial_dt": 1e-3,

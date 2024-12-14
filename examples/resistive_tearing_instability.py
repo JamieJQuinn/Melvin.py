@@ -4,7 +4,7 @@ from functools import partial
 import numpy as np
 from numpy.random import default_rng
 
-import cupy
+# import cupy
 import time
 
 from melvin import Parameters, Simulation, BasisFunctions
@@ -16,7 +16,8 @@ from melvin.utility import (
     sech,
 )
 
-xp = cupy
+# xp = cupy
+xp = np
 
 
 def create_shear_layer(z0, width, Z):

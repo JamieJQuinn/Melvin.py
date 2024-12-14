@@ -19,25 +19,34 @@ xp = cupy
 
 def load_initial_conditions(params, w, tmp):
     epsilon = 1e-2
+
+    x = np.linspace(0, params.lx, params.nx, endpoint=False)
+    z = np.linspace(0, params.lz, params.nz, endpoint=False)
+    X, Z = np.meshgrid(x, z, indexing="ij")
+
+    tmp_p = 1 - Z + epsilon*(np.sin(np.pi*X/2.44))
+
+    tmp.load(tmp_p, is_physical=True)
+
     init_var_with_noise(w, epsilon)
-    init_var_with_noise(tmp, epsilon)
+    # init_var_with_noise(tmp, epsilon)
 
 
 def main():
     PARAMS = {
-        "nx": 2 ** 10,
-        "nz": 2 ** 9,
-        "lx": 16.0 / 9,
+        "nx": 64,
+        "nz": 13,
+        "lx": 2.44,
         "lz": 1.0,
-        "initial_dt": 1e-7,
+        "initial_dt": 1e-6,
         "cfl_cutoff": 0.5,
-        "Pr": 4.3,
-        "Ra": 1e8,
-        "final_time": 0.005,
+        "Pr": 0.5,
+        "Ra": 1e6,
+        "final_time": 0.05,
         "spatial_derivative_order": 2,
         "integrator_order": 2,
         "integrator": "explicit",
-        "save_cadence": 1e-5,
+        "save_cadence": 1e-4,
         "dump_cadence": 1e-1,
         "discretisation": ["spectral", "fdm"],
         "precision": "single",
